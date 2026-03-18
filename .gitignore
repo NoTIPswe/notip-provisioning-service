@@ -41,9 +41,5 @@ tmp/
 # --- Certs ---
 certs/
 
-# --- Generated contracts (fetched from notip-infra, generated on demand) ---
-api-contracts/
-src/generated/
-
 # --- Ignored folder ---
 ignored/

@@ -23,8 +23,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typecheck": "npx tsc --noEmit --project tsconfig.json",
     "export:openapi": "ts-node --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\"}' scripts/generate-openapi.ts",
-    "generate:openapi": "bash scripts/generate-openapi.sh",
-    "generate:async": "bash scripts/generate-asyncapi.sh"
+    "import:openapi": "bash scripts/import-openapi.sh",
+    "import:async": "bash scripts/import-asyncapi.sh"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
