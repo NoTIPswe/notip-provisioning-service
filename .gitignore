@@ -1,0 +1,49 @@
+# --- Dependencies ---
+node_modules
+
+# --- Build Outputs (Angular / NestJS) ---
+dist/
+out/
+build/
+bin/
+eslint-report.json
+coverage/
+
+# --- Logs ---
+logs
+*.log
+npm-debug.log*
+
+# --- Environment Variables (IMPORTANT!) ---
+.env
+.env.local
+.env.*.local
+*.env
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# --- IDEs / Editor ---
+.idea/
+.vscode/
+
+# --- Angular Specific ---
+.angular/
+
+# --- Temporary Files ---
+*.tmp
+*.temp
+.cache/
+tmp/
+
+# --- Certs ---
+certs/
+
+# --- Generated contracts (fetched from notip-infra, generated on demand) ---
+api-contracts/
+src/generated/
+
+# --- Ignored folder ---
+ignored/
