@@ -1,16 +1,25 @@
 export interface ProvisioningConfig {
-  NATS_URL: string; // URL del server NATS
-  NATS_CREDENTIALS: string; // Username:password per l'autenticazione NATS
-  NATS_REQUEST_TIMEOUT_MS: number; // Timeout per le chiamate Request-Reply (default 5000)
-  NATS_MAX_RETRIES: number; // Numero massimo di tentativi in caso di errore (default 3)
-  CA_CERTS_PATH: string; // Percorso dove verranno salvati i certificati (default /certs)
-  CERT_TTL_DAYS: number; // Durata del certificato del dispositivo (default 90 giorni)
-  PORT: number; // Porta su cui gira questo servizio (3004)
+  NATS_URL: string;
+  NATS_CREDENTIALS: string;
+  NATS_REQUEST_TIMEOUT_MS: number;
+  NATS_MAX_RETRIES: number;
+  CA_CERTS_PATH: string;
+  CERT_TTL_DAYS: number;
+  PORT: number;
 }
 
+const required = (name: string): string => {
+  const value = process.env[name];
+  if (!value || value.trim().length === 0) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+};
+
 export const loadConfig = (): ProvisioningConfig => ({
-  NATS_URL: process.env.NATS_URL || 'nats://nats:4222',
-  NATS_CREDENTIALS: process.env.NATS_CREDENTIALS || 'user:pass',
+  NATS_URL: required('NATS_URL'),
+  NATS_CREDENTIALS: required('NATS_CREDENTIALS'),
   NATS_REQUEST_TIMEOUT_MS: Number.parseInt(
     process.env.NATS_REQUEST_TIMEOUT_MS || '5000',
     10,

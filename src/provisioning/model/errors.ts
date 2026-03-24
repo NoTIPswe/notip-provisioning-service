@@ -32,12 +32,3 @@ export class ManagementAPIUnavailableError extends ProvisioningDomainError {
     super('Management API unavailable after retries');
   }
 }
-
-//start-up crash
-export class CAUninitializedError extends ProvisioningDomainError {
-  constructor(
-    message: string = 'CAFileStore cannot read or generate a valid CA',
-  ) {
-    super(message);
-  }
-}

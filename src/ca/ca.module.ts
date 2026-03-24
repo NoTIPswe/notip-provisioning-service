@@ -6,13 +6,20 @@ import { CAInitializerService } from './ca-initializer.service';
 @Module({
   providers: [
     {
-      provide: 'CARepository', //firma
-      useClass: CAFileStoreService, //implementazione
+      provide: 'CARepository',
+      useClass: CAFileStoreService,
     },
     ForgeCSRSignerService,
-    CAInitializerService, //si avvia all'avvio
+    CAInitializerService,
+    {
+      provide: 'CAProvider',
+      useExisting: CAInitializerService,
+    },
+    {
+      provide: 'CSRSigner',
+      useExisting: ForgeCSRSignerService,
+    },
   ],
-  //esportiamo solo quello che serve agli altri
-  exports: ['CARepository', ForgeCSRSignerService],
+  exports: ['CAProvider', 'CSRSigner'],
 })
 export class CAModule {}

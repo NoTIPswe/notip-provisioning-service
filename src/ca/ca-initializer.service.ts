@@ -1,38 +1,51 @@
 import { Injectable, OnModuleInit, Inject, Logger } from '@nestjs/common';
 import type { CARepository } from './interfaces/ca-repository.interface';
+import { CAMaterial } from './model/ca-material';
+import { CAProvider } from './interfaces/ca-provider.interface';
+import { CAUninitializedError } from './model/errors';
 
 @Injectable()
-export class CAInitializerService implements OnModuleInit {
-  private readonly logger = new Logger(CAInitializerService.name); //per manutenzione
+export class CAInitializerService implements OnModuleInit, CAProvider {
+  private readonly logger = new Logger(CAInitializerService.name);
+  private caMaterial: CAMaterial | null = null;
 
   constructor(
     @Inject('CARepository') private readonly caRepository: CARepository,
   ) {}
 
-  async onModuleInit() {
-    this.logger.log('Controllo stato della Certificate Authority...');
+  async onModuleInit(): Promise<void> {
+    await this.initializeCA();
+  }
+
+  async initializeCA(): Promise<void> {
+    this.logger.log('Checking Certificate Authority state...');
 
     try {
       const exists = await this.caRepository.caExists();
 
       if (exists) {
-        this.logger.log(
-          'CA esistente trovata nel volume. Caricamento in corso...',
-        );
-        await this.caRepository.load();
+        this.caMaterial = await this.caRepository.load();
+        this.logger.log('Existing CA loaded from volume');
       } else {
+        this.caMaterial = await this.caRepository.initialize();
         this.logger.warn(
-          'Nessuna CA trovata. Generazione nuova Root CA e certificati NATS...',
+          'No CA found. Generated new CA and NATS server certificates',
         );
-        await this.caRepository.initialize();
-        this.logger.log('Inizializzazione completata con successo.');
       }
     } catch (error) {
-      this.logger.error(
-        "Errore critico durante l'inizializzazione della CA:",
+      this.logger.error('Critical CA initialization error');
+      throw new CAUninitializedError(
+        'CAFileStore cannot read or generate a valid CA',
         error,
       );
-      throw error;
     }
+  }
+
+  getCA(): CAMaterial {
+    if (!this.caMaterial) {
+      throw new CAUninitializedError('CA is not initialized in memory');
+    }
+
+    return this.caMaterial;
   }
 }

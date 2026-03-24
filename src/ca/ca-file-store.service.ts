@@ -6,6 +6,7 @@ import { CARepository } from './interfaces/ca-repository.interface';
 import { CAMaterial } from './model/ca-material';
 import { NATSServerCertificate } from './model/nats-server-certificate';
 import type { ProvisioningConfig } from '../config/provisioning.config';
+import { CAUninitializedError } from './model/errors';
 
 @Injectable()
 export class CAFileStoreService implements CARepository {
@@ -44,32 +45,41 @@ export class CAFileStoreService implements CARepository {
       const keyPem = await fs.readFile(this.caKeyPath, 'utf8');
       const certPem = await fs.readFile(this.caCertPath, 'utf8');
       if (!keyPem || !certPem) {
-        throw new Error('CA files empty');
+        throw new CAUninitializedError('CA files are empty');
       }
       return new CAMaterial(keyPem, certPem);
-    } catch {
-      throw new Error('CAUninitializedError');
+    } catch (error) {
+      throw new CAUninitializedError(
+        'Cannot load CA material from volume',
+        error,
+      );
     }
   }
 
   async initialize(): Promise<CAMaterial> {
-    await fs.mkdir(this.certsPath, { recursive: true });
+    try {
+      await fs.mkdir(this.certsPath, { recursive: true });
 
-    const caMaterial = this.generateCA();
+      const caMaterial = this.generateCA();
+      const natsCert = this.generateNATSServerCert(caMaterial);
 
-    const natsCert = this.generateNATSServerCert(caMaterial);
+      await fs.writeFile(this.caKeyPath, caMaterial.privateKeyPem, {
+        mode: 0o600,
+      });
+      await fs.writeFile(this.caCertPath, caMaterial.certificatePem, {
+        mode: 0o644,
+      });
 
-    await fs.writeFile(this.caKeyPath, caMaterial.privateKeyPem, {
-      mode: 0o600,
-    });
-    await fs.writeFile(this.caCertPath, caMaterial.certificatePem, {
-      mode: 0o644,
-    });
+      await fs.writeFile(this.natsKeyPath, natsCert.keyPem, { mode: 0o600 });
+      await fs.writeFile(this.natsCertPath, natsCert.certPem, { mode: 0o644 });
 
-    await fs.writeFile(this.natsKeyPath, natsCert.keyPem, { mode: 0o600 });
-    await fs.writeFile(this.natsCertPath, natsCert.certPem, { mode: 0o644 });
-
-    return caMaterial;
+      return caMaterial;
+    } catch (error) {
+      throw new CAUninitializedError(
+        'Cannot initialize CA material in volume',
+        error,
+      );
+    }
   }
 
   private generateCA(): CAMaterial {
