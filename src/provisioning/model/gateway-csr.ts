@@ -4,7 +4,7 @@ export class GatewayCSR {
   readonly pemData: string;
 
   constructor(pem: string) {
-    if (!pem || !pem.startsWith('inizio la ricerca del certificato...')) {
+    if (!pem || !pem.startsWith('-----BEGIN CERTIFICATE REQUEST-----')) {
       throw new MalformedCSRError();
     }
     this.pemData = pem;
