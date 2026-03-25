@@ -37,13 +37,13 @@ describe('ProvisioningService', () => {
   it('orchestrates successful onboarding in order', async () => {
     const identity = new GatewayIdentity('gw-1', 'tenant-1');
     const certificate = new SignedCertificate('CERT_PEM');
-    const aesKey = new AESKey(Buffer.alloc(32, 5));
+    const aeskey = new AESKey(Buffer.alloc(32, 5));
 
     const factoryValidator = {
       validate: jest.fn().mockResolvedValue(identity),
     };
     const csrSigner = { sign: jest.fn().mockResolvedValue(certificate) };
-    const keyGenerator = { generate: jest.fn().mockReturnValue(aesKey) };
+    const keyGenerator = { generate: jest.fn().mockReturnValue(aeskey) };
     const completer = { complete: jest.fn().mockResolvedValue(undefined) };
     const metrics = buildMetrics();
 
@@ -63,7 +63,7 @@ describe('ProvisioningService', () => {
       identity,
     );
     expect(keyGenerator.generate).toHaveBeenCalledTimes(1);
-    expect(completer.complete).toHaveBeenCalledWith(identity, aesKey);
+    expect(completer.complete).toHaveBeenCalledWith(identity, aeskey);
 
     expect(metrics.provisioningAttempts.inc).toHaveBeenCalledTimes(1);
     expect(metrics.provisioningSuccesses.inc).toHaveBeenCalledTimes(1);
@@ -72,7 +72,7 @@ describe('ProvisioningService', () => {
     expect(metrics.natsCompleteDuration.observe).toHaveBeenCalledTimes(1);
 
     expect(result.certificate).toBe(certificate);
-    expect(result.aesKey).toBe(aesKey);
+    expect(result.aeskey).toBe(aeskey);
     expect(result.identity).toBe(identity);
   });
 

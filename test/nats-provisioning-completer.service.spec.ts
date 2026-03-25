@@ -5,7 +5,7 @@ import { ManagementAPIUnavailableError } from '../src/provisioning/model/errors'
 
 describe('NATSProvisioningCompleter', () => {
   const identity = new GatewayIdentity('gw-1', 'tenant-1');
-  const aesKey = new AESKey(Buffer.alloc(32, 9), 1);
+  const aeskey = new AESKey(Buffer.alloc(32, 9), 1);
 
   it('sends completion payload and resolves on success=true', async () => {
     const rrClient = {
@@ -14,12 +14,12 @@ describe('NATSProvisioningCompleter', () => {
 
     const service = new NATSProvisioningCompleter(rrClient as never);
 
-    await expect(service.complete(identity, aesKey)).resolves.toBeUndefined();
+    await expect(service.complete(identity, aeskey)).resolves.toBeUndefined();
     expect(rrClient.request).toHaveBeenCalledWith(
       'internal.mgmt.provisioning.complete',
       {
         gateway_id: 'gw-1',
-        key_material: aesKey.toBase64(),
+        key_material: aeskey.toBase64(),
         key_version: 1,
       },
     );
@@ -32,7 +32,7 @@ describe('NATSProvisioningCompleter', () => {
 
     const service = new NATSProvisioningCompleter(rrClient as never);
 
-    await expect(service.complete(identity, aesKey)).rejects.toBeInstanceOf(
+    await expect(service.complete(identity, aeskey)).rejects.toBeInstanceOf(
       ManagementAPIUnavailableError,
     );
   });

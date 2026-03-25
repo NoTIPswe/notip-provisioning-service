@@ -53,7 +53,7 @@ export class ProvisioningController {
 
     return {
       certificate: result.certificate.pemData,
-      aesKey: result.aesKey.toBase64(),
+      aeskey: result.aeskey.toBase64(),
     };
   }
 }

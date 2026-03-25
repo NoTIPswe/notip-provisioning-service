@@ -47,7 +47,7 @@ describe('ProvisioningController', () => {
     expect(req.provisioningResult).toBe(result);
     expect(response).toEqual({
       certificate: 'CERT_PEM',
-      aesKey: result.aesKey.toBase64(),
+      aeskey: result.aeskey.toBase64(),
     });
   });
 

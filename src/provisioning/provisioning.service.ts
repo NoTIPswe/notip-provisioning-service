@@ -18,7 +18,7 @@ export class ProvisioningService implements OnboardGateway {
     @Inject('CSRSigner')
     private readonly csrSigner: CSRSigner,
     @Inject('AESKeyGenerator')
-    private readonly aesKeyGenerator: AESKeyGenerator,
+    private readonly aeskeyGenerator: AESKeyGenerator,
     private readonly metrics: ProvisioningMetrics,
   ) {}
 
@@ -36,15 +36,15 @@ export class ProvisioningService implements OnboardGateway {
       const certificate = await this.csrSigner.sign(request.csr, identity);
       this.metrics.csrSigningDuration.observe(Date.now() - signStart);
 
-      const aesKey = this.aesKeyGenerator.generate();
+      const aeskey = this.aeskeyGenerator.generate();
 
       const completeStart = Date.now();
-      await this.provisioningCompleter.complete(identity, aesKey);
+      await this.provisioningCompleter.complete(identity, aeskey);
       this.metrics.natsCompleteDuration.observe(Date.now() - completeStart);
 
       this.metrics.provisioningSuccesses.inc();
 
-      return new ProvisioningResult(certificate, aesKey, identity);
+      return new ProvisioningResult(certificate, aeskey, identity);
     } catch (error) {
       this.metrics.provisioningFailures
         .labels(this.mapFailureReason(error))

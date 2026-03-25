@@ -87,6 +87,6 @@ describe('Onboard flow integration', () => {
 
     expect(result.certificate.pemData).toBe('CERT_PEM');
     expect(result.identity.gatewayId).toBe('gw-1');
-    expect(typeof result.aesKey.toBase64()).toBe('string');
+    expect(typeof result.aeskey.toBase64()).toBe('string');
   });
 });

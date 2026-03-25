@@ -15,7 +15,7 @@ import { register } from 'prom-client';
 
 type OnboardHttpResponse = {
   certificate?: unknown;
-  aesKey?: unknown;
+  aeskey?: unknown;
 };
 
 describe('Provisioning onboard (e2e)', () => {
@@ -77,7 +77,7 @@ describe('Provisioning onboard (e2e)', () => {
     await app.close();
   });
 
-  it('returns 201 with certificate and aesKey on successful onboarding', () => {
+  it('returns 201 with certificate and aeskey on successful onboarding', () => {
     rrClient.request
       .mockResolvedValueOnce({ gateway_id: 'gw-1', tenant_id: 'tenant-1' })
       .mockResolvedValueOnce({ success: true });
@@ -97,7 +97,7 @@ describe('Provisioning onboard (e2e)', () => {
       .expect((res) => {
         const body = res.body as OnboardHttpResponse;
         expect(body.certificate).toBe('CERT_PEM');
-        expect(typeof body.aesKey).toBe('string');
+        expect(typeof body.aeskey).toBe('string');
       });
   });
 

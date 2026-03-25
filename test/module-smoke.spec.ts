@@ -43,11 +43,11 @@ describe('Module smoke tests', () => {
     const cert = new NATSServerCertificate('key', 'cert');
     const dto = new OnboardResponseDto();
     dto.certificate = 'pem';
-    dto.aesKey = 'base64';
+    dto.aeskey = 'base64';
 
     expect(cert.keyPem).toBe('key');
     expect(cert.certPem).toBe('cert');
     expect(dto.certificate).toBe('pem');
-    expect(dto.aesKey).toBe('base64');
+    expect(dto.aeskey).toBe('base64');
   });
 });
