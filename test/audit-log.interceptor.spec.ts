@@ -1,0 +1,162 @@
+import { CallHandler, ExecutionContext, Logger } from '@nestjs/common';
+import { of, throwError, firstValueFrom } from 'rxjs';
+import { AuditLogInterceptor } from '../src/provisioning/audit-log.interceptor';
+import { ProvisioningResult } from '../src/provisioning/model/provisioning-result';
+import { SignedCertificate } from '../src/ca/model/signed-certificate';
+import { AESKey } from '../src/provisioning/model/aes-key';
+import { GatewayIdentity } from '../src/provisioning/model/gateway-identity';
+import {
+  GatewayAlreadyProvisionedError,
+  InvalidFactoryCredentialsError,
+  MalformedCSRError,
+  ManagementAPIUnavailableError,
+} from '../src/provisioning/model/errors';
+
+type RequestLike = {
+  body?: Record<string, unknown>;
+  headers: Record<string, string | string[] | undefined>;
+  ip?: string;
+  provisioningResult?: ProvisioningResult;
+};
+
+type AuditPayload = {
+  factory_id?: unknown;
+  source_ip?: unknown;
+  outcome?: unknown;
+  gateway_id?: unknown;
+  tenant_id?: unknown;
+};
+
+const parsePayload = (value: unknown): AuditPayload => {
+  const parsed: unknown = JSON.parse(String(value));
+  if (typeof parsed !== 'object' || parsed === null) {
+    throw new Error('Invalid audit log payload');
+  }
+
+  return parsed as AuditPayload;
+};
+
+const latestPayload = (logSpy: jest.SpyInstance): AuditPayload => {
+  const calls = logSpy.mock.calls as unknown[];
+  const lastCall = calls[calls.length - 1] as unknown[];
+  const firstArg = lastCall[0];
+
+  return parsePayload(firstArg);
+};
+
+describe('AuditLogInterceptor', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  const createContext = (request: RequestLike): ExecutionContext =>
+    ({
+      switchToHttp: () => ({ getRequest: () => request }),
+    }) as unknown as ExecutionContext;
+
+  it('logs successful provisioning with identity fields', async () => {
+    const interceptor = new AuditLogInterceptor();
+    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+
+    const request: RequestLike = {
+      body: { factory_id: 'factory-1' },
+      headers: { 'x-forwarded-for': '10.0.0.1, 10.0.0.2' },
+      provisioningResult: new ProvisioningResult(
+        new SignedCertificate('CERT'),
+        new AESKey(Buffer.alloc(32, 1)),
+        new GatewayIdentity('gw-1', 'tenant-1'),
+        5000,
+      ),
+    };
+
+    const context = createContext(request);
+    const handler: CallHandler = { handle: () => of('ok') };
+
+    await firstValueFrom(interceptor.intercept(context, handler));
+
+    expect(logSpy).toHaveBeenCalledTimes(1);
+    const payload = latestPayload(logSpy);
+    expect(payload.factory_id).toBe('factory-1');
+    expect(payload.source_ip).toBe('10.0.0.1');
+    expect(payload.outcome).toBe('success');
+    expect(payload.gateway_id).toBe('gw-1');
+    expect(payload.tenant_id).toBe('tenant-1');
+  });
+
+  it('logs mapped failure outcome and rethrows', async () => {
+    const interceptor = new AuditLogInterceptor();
+    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+
+    const request: RequestLike = {
+      body: { factory_id: 'factory-1' },
+      headers: {},
+      ip: '127.0.0.1',
+    };
+
+    const context = createContext(request);
+    const handler: CallHandler = {
+      handle: () => throwError(() => new InvalidFactoryCredentialsError()),
+    };
+
+    await expect(
+      firstValueFrom(interceptor.intercept(context, handler)),
+    ).rejects.toBeInstanceOf(InvalidFactoryCredentialsError);
+
+    const payload = latestPayload(logSpy);
+    expect(payload.outcome).toBe('invalid_credentials');
+    expect(payload.source_ip).toBe('127.0.0.1');
+  });
+
+  it.each([
+    [new MalformedCSRError(), 'malformed_csr'],
+    [new GatewayAlreadyProvisionedError(), 'already_provisioned'],
+    [new ManagementAPIUnavailableError(), 'service_unavailable'],
+  ])(
+    'logs mapped outcome %s',
+    async (error: Error, expectedOutcome: string) => {
+      const interceptor = new AuditLogInterceptor();
+      const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+
+      const request: RequestLike = {
+        body: { factory_id: 'factory-1' },
+        headers: {},
+        ip: '127.0.0.1',
+      };
+
+      const context = createContext(request);
+      const handler: CallHandler = {
+        handle: () => throwError(() => error),
+      };
+
+      await expect(
+        firstValueFrom(interceptor.intercept(context, handler)),
+      ).rejects.toBe(error);
+
+      const payload = latestPayload(logSpy);
+      expect(payload.outcome).toBe(expectedOutcome);
+    },
+  );
+
+  it('logs generic outcome for unknown errors', async () => {
+    const interceptor = new AuditLogInterceptor();
+    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+
+    const request: RequestLike = {
+      body: { factory_id: 'factory-1' },
+      headers: {},
+      ip: '127.0.0.1',
+    };
+
+    const context = createContext(request);
+    const handler: CallHandler = {
+      handle: () => throwError(() => new Error('unknown')),
+    };
+
+    await expect(
+      firstValueFrom(interceptor.intercept(context, handler)),
+    ).rejects.toThrow('unknown');
+
+    const payload = latestPayload(logSpy);
+    expect(payload.outcome).toBe('error');
+  });
+});

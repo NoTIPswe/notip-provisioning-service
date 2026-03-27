@@ -1,25 +1,142 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
-import { AppModule } from './../src/app.module';
+import { ProvisioningController } from '../src/provisioning/provisioning.controller';
+import { ProvisioningService } from '../src/provisioning/provisioning.service';
+import { ProvisioningMetrics } from '../src/metrics/provisioning.metrics';
+import { NATSFactoryValidator } from '../src/nats/nats-factory-validator.service';
+import { NATSProvisioningCompleter } from '../src/nats/nats-provisioning-completer.service';
+import { NATSRRClient } from '../src/nats/nats-rr.client';
+import { AESKeyGeneratorService } from '../src/crypto/aes-key-generator.service';
+import { AuditLogInterceptor } from '../src/provisioning/audit-log.interceptor';
+import { ProvisioningExceptionFilter } from '../src/provisioning/provisioning-exception.filter';
+import { SignedCertificate } from '../src/ca/model/signed-certificate';
+import { register } from 'prom-client';
 
-describe('AppController (e2e)', () => {
-  let app: INestApplication<App>;
+type OnboardHttpResponse = {
+  certificate?: unknown;
+  aeskey?: unknown;
+  send_frequency_ms?: unknown;
+};
+
+describe('Provisioning onboard (e2e)', () => {
+  let app: INestApplication;
+  const rrClient = {
+    request: jest.fn(),
+  };
+  const csrSigner = {
+    sign: jest.fn().mockResolvedValue(new SignedCertificate('CERT_PEM')),
+  };
 
   beforeEach(async () => {
+    register.clear();
+    rrClient.request.mockReset();
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      controllers: [ProvisioningController],
+      providers: [
+        ProvisioningService,
+        ProvisioningMetrics,
+        NATSFactoryValidator,
+        NATSProvisioningCompleter,
+        AESKeyGeneratorService,
+        AuditLogInterceptor,
+        ProvisioningExceptionFilter,
+        {
+          provide: NATSRRClient,
+          useValue: rrClient,
+        },
+        {
+          provide: 'FactoryValidator',
+          useExisting: NATSFactoryValidator,
+        },
+        {
+          provide: 'ProvisioningCompleter',
+          useExisting: NATSProvisioningCompleter,
+        },
+        {
+          provide: 'AESKeyGenerator',
+          useExisting: AESKeyGeneratorService,
+        },
+        {
+          provide: 'CSRSigner',
+          useValue: csrSigner,
+        },
+        {
+          provide: 'OnboardGateway',
+          useExisting: ProvisioningService,
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('returns 201 with certificate and aeskey on successful onboarding', () => {
+    rrClient.request
+      .mockResolvedValueOnce({ gateway_id: 'gw-1', tenant_id: 'tenant-1' })
+      .mockResolvedValueOnce({ success: true });
+
+    const httpServer = app.getHttpServer() as unknown as Parameters<
+      typeof request
+    >[0];
+
+    return request(httpServer)
+      .post('/provision/onboard')
+      .send({
+        factory_id: 'factory-1',
+        factory_key: 'factory-key-1',
+        csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
+        send_frequency_ms: 5000,
+      })
+      .expect(201)
+      .expect((res) => {
+        const body = res.body as OnboardHttpResponse;
+        expect(body.certificate).toBe('CERT_PEM');
+        expect(typeof body.aeskey).toBe('string');
+        expect(body.send_frequency_ms).toBe(5000);
+      });
+  });
+
+  it('returns 401 when factory credentials are invalid', () => {
+    rrClient.request.mockResolvedValueOnce({ error: 'INVALID' });
+
+    const httpServer = app.getHttpServer() as unknown as Parameters<
+      typeof request
+    >[0];
+
+    return request(httpServer)
+      .post('/provision/onboard')
+      .send({
+        factory_id: 'factory-1',
+        factory_key: 'wrong-key',
+        csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
+        send_frequency_ms: 5000,
+      })
+      .expect(401)
+      .expect({ error: 'INVALID_CREDENTIALS' });
+  });
+
+  it('returns 400 for malformed CSR', () => {
+    const httpServer = app.getHttpServer() as unknown as Parameters<
+      typeof request
+    >[0];
+
+    return request(httpServer)
+      .post('/provision/onboard')
+      .send({
+        factory_id: 'factory-1',
+        factory_key: 'factory-key-1',
+        csr: 'invalid-csr',
+        send_frequency_ms: 5000,
+      })
+      .expect(400)
+      .expect({ error: 'MALFORMED_CSR' });
   });
 });

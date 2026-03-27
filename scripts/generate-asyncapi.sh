@@ -1,28 +1,31 @@
 #!/usr/bin/env bash
-# Fetch a specific AsyncAPI spec from notip-infra at a given tag, filter it to the
-# current service's channels/operations, generate TypeScript models, and commit.
+# Fetch a specific AsyncAPI spec from a producer repository at a given tag,
+# filter it to the current service's channels/operations, and generate
+# TypeScript models.
 #
 # Usage:
-#   npm run import:async -- --tag v1.2.3 --file my-events.yaml
-#   npm run import:async -- --tag v1.2.3 --file my-events.yaml --service my-service
+#   npm run fetch:asyncapi -- --repo notipswe/some-producer --tag v1.2.3 --file my-events.yaml
+#   npm run fetch:asyncapi -- --repo notipswe/some-producer --tag v1.2.3 --file my-events.yaml --service my-service
 #
 # Arguments:
-#   --tag      Git tag or branch in notip-infra (required)
-#   --file     Filename inside api-contracts/asyncapi/ in notip-infra (required)
+#   --repo     Source GitHub repository (required)
+#   --tag      Git tag or branch in the source repo (required)
+#   --file     Filename inside api-contracts/asyncapi/ in the source repo (required)
 #   --service  Service tag to filter by (default: management-api)
 set -euo pipefail
 
-REPO="notipswe/notip-infra"
 REMOTE_BASE="api-contracts/asyncapi"
 LOCAL_DIR="api-contracts/asyncapi"
 OUT_DIR="src/generated/asyncapi"
 
+REPO=""
 SERVICE="provisioning-service"
 TAG=""
 FILE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
+    --repo)    REPO="$2";    shift 2 ;;
     --tag)     TAG="$2";     shift 2 ;;
     --file)    FILE="$2";    shift 2 ;;
     --service) SERVICE="$2"; shift 2 ;;
@@ -30,19 +33,30 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+[[ -z "$REPO" ]] && { echo "Error: --repo is required"; exit 1; }
 [[ -z "$TAG"  ]] && { echo "Error: --tag is required";  exit 1; }
 [[ -z "$FILE" ]] && { echo "Error: --file is required"; exit 1; }
 
 mkdir -p "$LOCAL_DIR"
 
 # ---------------------------------------------------------------------------
-# 1. Fetch the full spec from notip-infra (source of truth)
+# 1. Fetch the full spec from the producer repo
 # ---------------------------------------------------------------------------
 echo "Fetching ${FILE} from ${REPO}@${TAG}..."
-gh api "repos/${REPO}/contents/${REMOTE_BASE}/${FILE}?ref=${TAG}" \
-  --jq '.content' \
-  | tr -d '\n' \
-  | base64 -d > "${LOCAL_DIR}/${FILE}"
+gh api \
+  -H "Accept: application/vnd.github.raw" \
+  "repos/${REPO}/contents/${REMOTE_BASE}/${FILE}?ref=${TAG}" \
+  > "${LOCAL_DIR}/${FILE}"
+
+if [[ ! -s "${LOCAL_DIR}/${FILE}" ]]; then
+  echo "Error: fetched file is empty (${LOCAL_DIR}/${FILE}). Check --repo/--tag/--file and repository access."
+  exit 1
+fi
+
+if ! grep -Eq '^[[:space:]]*asyncapi[[:space:]]*:|"asyncapi"[[:space:]]*:' "${LOCAL_DIR}/${FILE}"; then
+  echo "Error: fetched file does not look like an AsyncAPI spec (missing top-level 'asyncapi' field)."
+  exit 1
+fi
 echo "  Saved → ${LOCAL_DIR}/${FILE}"
 
 # ---------------------------------------------------------------------------
@@ -59,20 +73,12 @@ node scripts/filter-asyncapi.mjs \
   --service "${SERVICE}"
 
 # ---------------------------------------------------------------------------
-# 3. Import TypeScript models from the filtered spec
+# 3. Generate TypeScript models from the filtered spec
 # ---------------------------------------------------------------------------
 OUTDIR="${OUT_DIR}/${NAME}"
 mkdir -p "${OUTDIR}"
 
 echo "Generating TypeScript models → ${OUTDIR}/"
 npx @asyncapi/cli generate models typescript "${FILTERED_TMP}" --output "${OUTDIR}"
-
-# ---------------------------------------------------------------------------
-# 4. Commit the raw spec + generated models
-# ---------------------------------------------------------------------------
-echo ""
-echo "Committing..."
-git add "${LOCAL_DIR}/${FILE}" "${OUTDIR}"
-git commit "${LOCAL_DIR}/${FILE}" "${OUTDIR}" -m "chore(contracts): fetch asyncapi ${FILE} from notip-infra@${TAG} (service: ${SERVICE})"
 
 echo "Done."

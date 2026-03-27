@@ -1,10 +1,20 @@
-import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { writeFileSync } from 'fs';
-import { AppModule } from '../src/app.module';
+import { Test } from '@nestjs/testing';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import * as yaml from 'js-yaml';
+import { ProvisioningController } from '../src/provisioning/provisioning.controller';
+
+const OUTPUT_DIR = 'api-contracts/openapi';
+const OUTPUT_FILE = `${OUTPUT_DIR}/openapi.yaml`;
 
 async function generateOpenApi(): Promise<void> {
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const moduleRef = await Test.createTestingModule({
+    controllers: [ProvisioningController],
+    providers: [{ provide: 'OnboardGateway', useValue: {} }],
+  }).compile();
+
+  const app = moduleRef.createNestApplication();
+  await app.init();
 
   const config = new DocumentBuilder()
     .setTitle('NoTIP Provisioning Service')
@@ -13,14 +23,13 @@ async function generateOpenApi(): Promise<void> {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  writeFileSync(
-    'openapi.json',
-    JSON.stringify(document, null, 2) + '\n',
-    'utf8',
-  );
+  const yamlString = yaml.dump(document, { noRefs: true });
+
+  mkdirSync(OUTPUT_DIR, { recursive: true });
+  writeFileSync(OUTPUT_FILE, yamlString, 'utf8');
 
   await app.close();
-  console.log('OpenAPI spec written to openapi.json');
+  console.log(`OpenAPI spec written to ${OUTPUT_FILE}`);
 }
 
 generateOpenApi().catch((err) => {
