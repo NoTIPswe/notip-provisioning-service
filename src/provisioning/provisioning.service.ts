@@ -39,12 +39,21 @@ export class ProvisioningService implements OnboardGateway {
       const aeskey = this.aeskeyGenerator.generate();
 
       const completeStart = Date.now();
-      await this.provisioningCompleter.complete(identity, aeskey);
+      await this.provisioningCompleter.complete(
+        identity,
+        aeskey,
+        request.sendFrequencyMs,
+      );
       this.metrics.natsCompleteDuration.observe(Date.now() - completeStart);
 
       this.metrics.provisioningSuccesses.inc();
 
-      return new ProvisioningResult(certificate, aeskey, identity);
+      return new ProvisioningResult(
+        certificate,
+        aeskey,
+        identity,
+        request.sendFrequencyMs,
+      );
     } catch (error) {
       this.metrics.provisioningFailures
         .labels(this.mapFailureReason(error))

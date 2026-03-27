@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class OnboardRequestDto {
@@ -28,4 +28,12 @@ export class OnboardRequestDto {
   @IsString()
   @IsNotEmpty()
   csr: string;
+
+  @ApiProperty({
+    description: 'Frequenza di invio telemetria del gateway in millisecondi',
+    example: 5000,
+  })
+  @IsInt()
+  @Min(1)
+  send_frequency_ms: number;
 }

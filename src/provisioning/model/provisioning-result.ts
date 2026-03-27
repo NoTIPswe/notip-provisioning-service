@@ -7,5 +7,6 @@ export class ProvisioningResult {
     public readonly certificate: SignedCertificate,
     public readonly aeskey: AESKey,
     public readonly identity: GatewayIdentity,
+    public readonly sendFrequencyMs: number,
   ) {}
 }

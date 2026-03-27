@@ -58,6 +58,7 @@ describe('Onboard flow integration', () => {
     const request = new ProvisioningRequest(
       new FactoryCredentials('factory-1', 'factory-key-1'),
       new GatewayCSR('-----BEGIN CERTIFICATE REQUEST-----\nabc'),
+      5000,
     );
 
     const result = await service.onboard(request);
@@ -82,11 +83,13 @@ describe('Onboard flow integration', () => {
       expect.objectContaining({
         gateway_id: 'gw-1',
         key_version: 1,
+        send_frequency_ms: 5000,
       }),
     );
 
     expect(result.certificate.pemData).toBe('CERT_PEM');
     expect(result.identity.gatewayId).toBe('gw-1');
     expect(typeof result.aeskey.toBase64()).toBe('string');
+    expect(result.sendFrequencyMs).toBe(5000);
   });
 });

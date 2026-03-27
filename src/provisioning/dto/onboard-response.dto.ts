@@ -12,4 +12,10 @@ export class OnboardResponseDto {
     example: 'SGVsbG8gV29ybGQgQUVTLTI1NiBLZXk=',
   })
   aeskey: string;
+
+  @ApiProperty({
+    description: 'Frequenza di invio telemetria del gateway in millisecondi',
+    example: 5000,
+  })
+  send_frequency_ms: number;
 }

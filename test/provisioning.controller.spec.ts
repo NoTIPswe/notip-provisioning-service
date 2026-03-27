@@ -15,6 +15,7 @@ describe('ProvisioningController', () => {
       new SignedCertificate('CERT_PEM'),
       new AESKey(Buffer.alloc(32, 7)),
       new GatewayIdentity('gw-1', 'tenant-1'),
+      5000,
     );
 
     let capturedRequest: ProvisioningRequest | undefined;
@@ -33,6 +34,7 @@ describe('ProvisioningController', () => {
       factory_id: 'factory-1',
       factory_key: 'secret-1',
       csr: '-----BEGIN CERTIFICATE REQUEST-----\nabc',
+      send_frequency_ms: 5000,
     };
 
     const req = {} as Request;
@@ -43,11 +45,13 @@ describe('ProvisioningController', () => {
     expect(capturedRequest?.credentials.factoryId).toBe('factory-1');
     expect(capturedRequest?.credentials.factoryKey).toBe('secret-1');
     expect(capturedRequest?.csr.pemData).toBe(body.csr);
+    expect(capturedRequest?.sendFrequencyMs).toBe(5000);
 
     expect(req.provisioningResult).toBe(result);
     expect(response).toEqual({
       certificate: 'CERT_PEM',
       aeskey: result.aeskey.toBase64(),
+      send_frequency_ms: 5000,
     });
   });
 
@@ -63,6 +67,7 @@ describe('ProvisioningController', () => {
       factory_id: 'factory-1',
       factory_key: 'secret-1',
       csr: 'invalid-csr',
+      send_frequency_ms: 5000,
     };
 
     const req = {} as Request;

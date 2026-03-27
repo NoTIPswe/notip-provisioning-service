@@ -65,6 +65,7 @@ describe('AuditLogInterceptor', () => {
         new SignedCertificate('CERT'),
         new AESKey(Buffer.alloc(32, 1)),
         new GatewayIdentity('gw-1', 'tenant-1'),
+        5000,
       ),
     };
 

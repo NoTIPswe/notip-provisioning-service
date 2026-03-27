@@ -16,6 +16,7 @@ import { register } from 'prom-client';
 type OnboardHttpResponse = {
   certificate?: unknown;
   aeskey?: unknown;
+  send_frequency_ms?: unknown;
 };
 
 describe('Provisioning onboard (e2e)', () => {
@@ -92,12 +93,14 @@ describe('Provisioning onboard (e2e)', () => {
         factory_id: 'factory-1',
         factory_key: 'factory-key-1',
         csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
+        send_frequency_ms: 5000,
       })
       .expect(201)
       .expect((res) => {
         const body = res.body as OnboardHttpResponse;
         expect(body.certificate).toBe('CERT_PEM');
         expect(typeof body.aeskey).toBe('string');
+        expect(body.send_frequency_ms).toBe(5000);
       });
   });
 
@@ -114,6 +117,7 @@ describe('Provisioning onboard (e2e)', () => {
         factory_id: 'factory-1',
         factory_key: 'wrong-key',
         csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
+        send_frequency_ms: 5000,
       })
       .expect(401)
       .expect({ error: 'INVALID_CREDENTIALS' });
@@ -130,6 +134,7 @@ describe('Provisioning onboard (e2e)', () => {
         factory_id: 'factory-1',
         factory_key: 'factory-key-1',
         csr: 'invalid-csr',
+        send_frequency_ms: 5000,
       })
       .expect(400)
       .expect({ error: 'MALFORMED_CSR' });

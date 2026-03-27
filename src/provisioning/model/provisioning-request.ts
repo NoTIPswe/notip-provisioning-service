@@ -5,5 +5,6 @@ export class ProvisioningRequest {
   constructor(
     public readonly credentials: FactoryCredentials,
     public readonly csr: GatewayCSR,
+    public readonly sendFrequencyMs: number,
   ) {}
 }

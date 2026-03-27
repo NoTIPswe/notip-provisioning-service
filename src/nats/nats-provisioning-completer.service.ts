@@ -9,13 +9,18 @@ import { ManagementAPIUnavailableError } from '../provisioning/model/errors';
 export class NATSProvisioningCompleter implements ProvisioningCompleter {
   constructor(private readonly rrClient: NATSRRClient) {}
 
-  async complete(identity: GatewayIdentity, aeskey: AESKey): Promise<void> {
+  async complete(
+    identity: GatewayIdentity,
+    aeskey: AESKey,
+    sendFrequencyMs: number,
+  ): Promise<void> {
     const response = await this.rrClient.request<unknown>(
       'internal.mgmt.provisioning.complete',
       {
         gateway_id: identity.gatewayId,
         key_material: aeskey.toBase64(),
         key_version: aeskey.version,
+        send_frequency_ms: sendFrequencyMs,
       },
     );
 

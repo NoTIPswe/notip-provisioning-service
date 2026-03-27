@@ -45,7 +45,11 @@ export class ProvisioningController {
       body.factory_key,
     );
     const csr = new GatewayCSR(body.csr);
-    const request = new ProvisioningRequest(credentials, csr);
+    const request = new ProvisioningRequest(
+      credentials,
+      csr,
+      body.send_frequency_ms,
+    );
 
     const result = await this.provisioningService.onboard(request);
 
@@ -54,6 +58,7 @@ export class ProvisioningController {
     return {
       certificate: result.certificate.pemData,
       aeskey: result.aeskey.toBase64(),
+      send_frequency_ms: result.sendFrequencyMs,
     };
   }
 }

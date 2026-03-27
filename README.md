@@ -17,12 +17,14 @@ nei @ApiProperty ci sta example e description su ogni campo (questi file sono vi
 - factory_id: stringa che identifica il gateway
 - factory_key: stringa segreta monouso che verrà validata tramite bcrypt nel Management API
 - csr: stringa in formato PEM che deve iniziare obbligatoriamente con "-----BEGIN CERTIFICATE REQUEST-----"
+- send_frequency_ms: frequenza di invio telemetria in millisecondi (intero > 0)
 
 #### Schema di risposta
 
 - 201 Created
 - certificate: certificato firmato
 - aeskey: la chiave AES-256 in base64
+- send_frequency_ms: frequenza di invio telemetria in millisecondi
 
 #### Errori
 
