@@ -23,6 +23,12 @@ repos:
         types: [file]
         files: \.(ts)$
         pass_filenames: false
+
+      - id: build-openapi-spec
+        name: Build OpenAPI spec
+        entry: npm run build:openapi-spec
+        language: system
+        pass_filenames: false
   
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1

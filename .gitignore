@@ -43,3 +43,8 @@ certs/
 
 # --- Ignored folder ---
 ignored/
+
+# --- Keep Generated API Contracts Tracked ---
+!openapi.json
+!src/generated/
+!src/generated/**
