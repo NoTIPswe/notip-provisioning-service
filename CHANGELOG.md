@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/NoTIPswe/notip-provisioning-service/compare/v1.0.0...v1.1.0) (2026-03-27)
+
+
+### Features
+
+* added scripts for automated generation ([dae5f00](https://github.com/NoTIPswe/notip-provisioning-service/commit/dae5f00e6e902653d15c14d55130b84ace878d19))
+
 # 1.0.0 (2026-03-19)
 
 
