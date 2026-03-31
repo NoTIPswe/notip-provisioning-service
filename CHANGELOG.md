@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/NoTIPswe/notip-provisioning-service/compare/v1.1.0...v1.1.1) (2026-03-31)
+
+
+### Bug Fixes
+
+* updated workflow and created open api spec ([5947663](https://github.com/NoTIPswe/notip-provisioning-service/commit/594766363b1a1821fb7ea37bc9ec3435523deccf))
+
 # [1.1.0](https://github.com/NoTIPswe/notip-provisioning-service/compare/v1.0.0...v1.1.0) (2026-03-27)
 
 
