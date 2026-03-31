@@ -56,6 +56,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/tenants/{id}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all users of a tenant */
+        get: operations["TenantsController_getTenantUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/tenants/{id}": {
         parameters: {
             query?: never;
@@ -136,7 +153,8 @@ export interface paths {
         /** Set alert configuration for a specific gateway */
         put: operations["AlertsController_setGatewayAlertsConfig"];
         post?: never;
-        delete?: never;
+        /** Delete alert configuration for a specific gateway */
+        delete: operations["AlertsController_deleteGatewayAlertsConfig"];
         options?: never;
         head?: never;
         patch?: never;
@@ -793,6 +811,45 @@ export interface operations {
             };
         };
     };
+    TenantsController_getTenantUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of users */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        user_id?: string;
+                        role?: string;
+                    }[];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     TenantsController_deleteTenant: {
         parameters: {
             query?: never;
@@ -945,6 +1002,40 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gateway not associated with tenant of JWT */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Gateway not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AlertsController_deleteGatewayAlertsConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gatewayId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Alert configuration deleted successfully */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
