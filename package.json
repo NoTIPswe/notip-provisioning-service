@@ -22,7 +22,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typecheck": "npx tsc --noEmit --project tsconfig.json",
-    "build:openapi-spec": "ts-node --compiler-options '{\"module\":\"CommonJS\",\"moduleResolution\":\"node\",\"emitDecoratorMetadata\":true,\"experimentalDecorators\":true}' scripts/generate-openapi.ts",
+    "build:openapi-spec": "ts-node --transpile-only scripts/generate-openapi.ts",
+    "generate:openapi": "ts-node --transpile-only scripts/generate-openapi.ts",
     "fetch:openapi": "bash scripts/generate-openapi.sh",
     "fetch:asyncapi": "bash scripts/generate-asyncapi.sh"
   },
