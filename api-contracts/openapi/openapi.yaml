@@ -18,7 +18,7 @@ paths:
 info:
   title: NoTIP Provisioning Service
   description: NoTIP Provisioning Service OpenAPI specification
-  version: 1.0.0
+  version: 1.1.0
   contact: {}
 tags: []
 servers: []
@@ -43,7 +43,12 @@ components:
             -----BEGIN CERTIFICATE REQUEST-----
             MIIB... 
             -----END CERTIFICATE REQUEST-----
+        send_frequency_ms:
+          type: number
+          description: Frequenza di invio telemetria del gateway in millisecondi
+          example: 5000
       required:
         - factory_id
         - factory_key
         - csr
+        - send_frequency_ms
