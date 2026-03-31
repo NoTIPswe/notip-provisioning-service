@@ -29,7 +29,7 @@ paths:
 info:
   title: NoTIP Provisioning Service
   description: NoTIP Provisioning Service OpenAPI specification
-  version: 1.0.0
+  version: 1.1.0
   contact: {}
 tags: []
 servers: []
