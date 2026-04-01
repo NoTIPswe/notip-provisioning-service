@@ -8,6 +8,7 @@ import {
   UseFilters,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiResponse, ApiBody } from '@nestjs/swagger';
 import type { Request } from 'express';
 import type { OnboardGateway } from './interfaces/onboard-gateway.interface';
 import { FactoryCredentials } from './model/factory-credentials';
@@ -36,19 +37,41 @@ export class ProvisioningController {
 
   @Post('onboard')
   @HttpCode(201)
+  @ApiBody({
+    type: OnboardRequestDto,
+    description: 'Gateway onboard request with factory credentials and CSR',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Gateway provisioned successfully',
+    type: OnboardResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request - malformed CSR or missing required fields',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - gateway already provisioned',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Server error - CA or NATS service unavailable',
+  })
   async onboard(
     @Body() body: OnboardRequestDto,
     @Req() req: Request,
   ): Promise<OnboardResponseDto> {
     const credentials = new FactoryCredentials(
-      body.factory_id,
-      body.factory_key,
+      body.credentials.factoryId,
+      body.credentials.factoryKey,
     );
     const csr = new GatewayCSR(body.csr);
     const request = new ProvisioningRequest(
       credentials,
       csr,
-      body.send_frequency_ms,
+      body.sendFrequencyMs,
+      body.firmwareVersion,
     );
 
     const result = await this.provisioningService.onboard(request);
@@ -56,9 +79,13 @@ export class ProvisioningController {
     req.provisioningResult = result;
 
     return {
-      certificate: result.certificate.pemData,
-      aeskey: result.aeskey.toBase64(),
-      send_frequency_ms: result.sendFrequencyMs,
+      certPem: result.certificate.pemData,
+      aesKey: result.aeskey.toBase64(),
+      identity: {
+        gatewayId: result.identity.gatewayId,
+        tenantId: result.identity.tenantId,
+      },
+      sendFrequencyMs: result.sendFrequencyMs,
     };
   }
 }

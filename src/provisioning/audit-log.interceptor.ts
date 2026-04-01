@@ -82,7 +82,10 @@ export class AuditLogInterceptor implements NestInterceptor {
 
   private extractFactoryId(request: Request): string {
     const body = request.body as Record<string, unknown> | undefined;
-    const factoryId = body?.factory_id;
+    const nestedCredentials = body?.credentials as
+      | Record<string, unknown>
+      | undefined;
+    const factoryId = nestedCredentials?.factoryId ?? body?.factory_id;
 
     if (typeof factoryId === 'string' && factoryId.length > 0) {
       return factoryId;

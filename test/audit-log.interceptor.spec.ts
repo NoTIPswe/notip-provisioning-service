@@ -59,7 +59,11 @@ describe('AuditLogInterceptor', () => {
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
     const request: RequestLike = {
-      body: { factory_id: 'factory-1' },
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
       headers: { 'x-forwarded-for': '10.0.0.1, 10.0.0.2' },
       provisioningResult: new ProvisioningResult(
         new SignedCertificate('CERT'),
@@ -88,7 +92,11 @@ describe('AuditLogInterceptor', () => {
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
     const request: RequestLike = {
-      body: { factory_id: 'factory-1' },
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
       headers: {},
       ip: '127.0.0.1',
     };
@@ -118,7 +126,11 @@ describe('AuditLogInterceptor', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
       const request: RequestLike = {
-        body: { factory_id: 'factory-1' },
+        body: {
+          credentials: {
+            factoryId: 'factory-1',
+          },
+        },
         headers: {},
         ip: '127.0.0.1',
       };
@@ -142,7 +154,11 @@ describe('AuditLogInterceptor', () => {
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
     const request: RequestLike = {
-      body: { factory_id: 'factory-1' },
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
       headers: {},
       ip: '127.0.0.1',
     };
