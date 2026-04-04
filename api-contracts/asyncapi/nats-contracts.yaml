@@ -1,10 +1,10 @@
 # TODO: put tags on all channels to indicate the services involved (see Norme di Progetto)
 
-asyncapi: "2.6.0"
+asyncapi: '2.6.0'
 
 info:
   title: NoTIP NATS Contracts
-  version: "1.0.0"
+  version: '1.0.0'
   description: |
     Authoritative subject and stream definitions for the NoTIP NATS JetStream cluster.
 
@@ -32,7 +32,6 @@ defaultContentType: application/json
 # ────────────────────────────────────────────────────────────────────────────
 
 channels:
-
   # ── Telemetry ────────────────────────────────────────────────────────────
 
   telemetry.data.{tenantId}.{gatewayId}:
@@ -56,7 +55,7 @@ channels:
       operationId: publishTelemetry
       summary: Gateway publishes an encrypted sensor reading.
       message:
-        $ref: "#/components/messages/TelemetryMessage"
+        $ref: '#/components/messages/TelemetryMessage'
 
   # ── Commands ─────────────────────────────────────────────────────────────
 
@@ -82,12 +81,12 @@ channels:
       operationId: receiveCommand
       summary: Gateway receives a command.
       message:
-        $ref: "#/components/messages/GatewayCommand"
+        $ref: '#/components/messages/GatewayCommand'
     publish:
       operationId: dispatchCommand
       summary: Management API dispatches a command to a gateway.
       message:
-        $ref: "#/components/messages/GatewayCommand"
+        $ref: '#/components/messages/GatewayCommand'
 
   # ── Command ACKs ──────────────────────────────────────────────────────────
 
@@ -112,7 +111,7 @@ channels:
       operationId: publishCommandAck
       summary: Gateway acknowledges command execution.
       message:
-        $ref: "#/components/messages/CommandAck"
+        $ref: '#/components/messages/CommandAck'
 
   # ── Alerts ───────────────────────────────────────────────────────────────
 
@@ -133,7 +132,7 @@ channels:
       operationId: publishGatewayOfflineAlert
       summary: Data Consumer publishes a gateway-offline alert.
       message:
-        $ref: "#/components/messages/GatewayOfflineAlert"
+        $ref: '#/components/messages/GatewayOfflineAlert'
 
   # ── Decommissioning ──────────────────────────────────────────────────────
 
@@ -158,7 +157,7 @@ channels:
       operationId: publishDecommission
       summary: Management API signals gateway decommissioning.
       message:
-        $ref: "#/components/messages/GatewayDecommissioned"
+        $ref: '#/components/messages/GatewayDecommissioned'
 
   # ── Audit Log ────────────────────────────────────────────────────────────
 
@@ -178,15 +177,15 @@ channels:
       operationId: publishAuditLog
       summary: Backend service publishes an audit log entry.
       message:
-        $ref: "#/components/messages/AuditLogEntry"
+        $ref: '#/components/messages/AuditLogEntry'
 
-# ────────────────────────────────────────────────────────────────────────────
-# §2 — Request-Reply Channels (internal service-to-service, no JetStream)
-#
-# These replace ALL inter-service HTTP. Not accessible from IoT gateways.
-# Timeout: 5s. Retry: 3x with backoff 1s/2s/4s. On failure: 503 to caller.
-# Startup operations (alert-configs.list): 10 retries, backoff up to 30s.
-# ────────────────────────────────────────────────────────────────────────────
+  # ────────────────────────────────────────────────────────────────────────────
+  # §2 — Request-Reply Channels (internal service-to-service, no JetStream)
+  #
+  # These replace ALL inter-service HTTP. Not accessible from IoT gateways.
+  # Timeout: 5s. Retry: 3x with backoff 1s/2s/4s. On failure: 503 to caller.
+  # Startup operations (alert-configs.list): 10 retries, backoff up to 30s.
+  # ────────────────────────────────────────────────────────────────────────────
 
   internal.mgmt.factory.validate:
     description: |
@@ -197,12 +196,12 @@ channels:
       operationId: validateFactoryKey
       summary: Provisioning asks Management API to validate factory credentials.
       message:
-        $ref: "#/components/messages/FactoryValidateRequest"
+        $ref: '#/components/messages/FactoryValidateRequest'
     subscribe:
       operationId: respondFactoryValidate
       summary: Management API responds with gateway identity or error.
       message:
-        $ref: "#/components/messages/FactoryValidateResponse"
+        $ref: '#/components/messages/FactoryValidateResponse'
 
   internal.mgmt.provisioning.complete:
     description: |
@@ -214,12 +213,12 @@ channels:
       operationId: completeProvisioning
       summary: Provisioning Service reports successful provisioning.
       message:
-        $ref: "#/components/messages/ProvisioningCompleteRequest"
+        $ref: '#/components/messages/ProvisioningCompleteRequest'
     subscribe:
       operationId: respondProvisioningComplete
       summary: Management API confirms persistence.
       message:
-        $ref: "#/components/messages/ProvisioningCompleteResponse"
+        $ref: '#/components/messages/ProvisioningCompleteResponse'
 
   internal.mgmt.alert-configs.list:
     description: |
@@ -238,7 +237,7 @@ channels:
       operationId: respondAlertConfigs
       summary: Management API returns all alert configurations.
       message:
-        $ref: "#/components/messages/AlertConfigsListResponse"
+        $ref: '#/components/messages/AlertConfigsListResponse'
 
   internal.mgmt.gateway.update-status:
     description: |
@@ -249,7 +248,7 @@ channels:
       operationId: updateGatewayStatus
       summary: Data Consumer reports a gateway status change.
       message:
-        $ref: "#/components/messages/GatewayStatusUpdateRequest"
+        $ref: '#/components/messages/GatewayStatusUpdateRequest'
     subscribe:
       operationId: respondGatewayStatusUpdate
       summary: Management API confirms status update.
@@ -271,21 +270,19 @@ channels:
       operationId: requestCost
       summary: Management API requests storage size for a tenant.
       message:
-        $ref: "#/components/messages/CostRequest"
+        $ref: '#/components/messages/CostRequest'
     subscribe:
       operationId: respondCost
       summary: Data API returns storage size from TimescaleDB.
       message:
-        $ref: "#/components/messages/CostResponse"
+        $ref: '#/components/messages/CostResponse'
 
 # ────────────────────────────────────────────────────────────────────────────
 # COMPONENTS
 # ────────────────────────────────────────────────────────────────────────────
 
 components:
-
   messages:
-
     TelemetryMessage:
       name: TelemetryMessage
       title: Encrypted telemetry envelope
@@ -295,7 +292,17 @@ components:
       contentType: application/json
       payload:
         type: object
-        required: [gatewayId, sensorId, sensorType, timestamp, keyVersion, encryptedData, iv, authTag]
+        required:
+          [
+            gatewayId,
+            sensorId,
+            sensorType,
+            timestamp,
+            keyVersion,
+            encryptedData,
+            iv,
+            authTag,
+          ]
         properties:
           gatewayId:
             type: string
@@ -476,7 +483,7 @@ components:
       contentType: application/json
       payload:
         type: object
-        required: [gateway_id, key_material, key_version]
+        required: [gateway_id, key_material, key_version, send_frequency_ms]
         properties:
           gateway_id:
             type: string
@@ -486,6 +493,9 @@ components:
             description: Base64-encoded 256-bit AES key (plaintext — transmitted over internal NATS mTLS only).
           key_version:
             type: integer
+          send_frequency_ms:
+            type: integer
+            description: Desired telemetry send frequency for the gateway (in milliseconds).
 
     ProvisioningCompleteResponse:
       name: ProvisioningCompleteResponse
