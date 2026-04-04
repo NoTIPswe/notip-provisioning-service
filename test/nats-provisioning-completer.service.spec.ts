@@ -7,6 +7,7 @@ describe('NATSProvisioningCompleter', () => {
   const identity = new GatewayIdentity('gw-1', 'tenant-1');
   const aeskey = new AESKey(Buffer.alloc(32, 9), 1);
   const sendFrequencyMs = 5000;
+  const firmwareVersion = '1.2.3';
 
   it('sends completion payload and resolves on success=true', async () => {
     const rrClient = {
@@ -16,7 +17,7 @@ describe('NATSProvisioningCompleter', () => {
     const service = new NATSProvisioningCompleter(rrClient as never);
 
     await expect(
-      service.complete(identity, aeskey, sendFrequencyMs),
+      service.complete(identity, aeskey, sendFrequencyMs, firmwareVersion),
     ).resolves.toBeUndefined();
     expect(rrClient.request).toHaveBeenCalledWith(
       'internal.mgmt.provisioning.complete',
@@ -25,6 +26,7 @@ describe('NATSProvisioningCompleter', () => {
         key_material: aeskey.toBase64(),
         key_version: 1,
         send_frequency_ms: sendFrequencyMs,
+        firmware_version: firmwareVersion,
       },
     );
   });
@@ -37,7 +39,29 @@ describe('NATSProvisioningCompleter', () => {
     const service = new NATSProvisioningCompleter(rrClient as never);
 
     await expect(
-      service.complete(identity, aeskey, sendFrequencyMs),
+      service.complete(identity, aeskey, sendFrequencyMs, firmwareVersion),
     ).rejects.toBeInstanceOf(ManagementAPIUnavailableError);
+  });
+
+  it('omits firmware_version when empty', async () => {
+    const rrClient = {
+      request: jest.fn().mockResolvedValue({ success: true }),
+    };
+
+    const service = new NATSProvisioningCompleter(rrClient as never);
+
+    await expect(
+      service.complete(identity, aeskey, sendFrequencyMs, ''),
+    ).resolves.toBeUndefined();
+
+    expect(rrClient.request).toHaveBeenCalledWith(
+      'internal.mgmt.provisioning.complete',
+      {
+        gateway_id: 'gw-1',
+        key_material: aeskey.toBase64(),
+        key_version: 1,
+        send_frequency_ms: sendFrequencyMs,
+      },
+    );
   });
 });

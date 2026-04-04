@@ -27,6 +27,7 @@ describe('Provisioning onboard (e2e)', () => {
   let app: INestApplication;
   const rrClient = {
     request: jest.fn(),
+    publish: jest.fn().mockResolvedValue(undefined),
   };
   const csrSigner = {
     sign: jest.fn().mockResolvedValue(new SignedCertificate('CERT_PEM')),
@@ -35,6 +36,7 @@ describe('Provisioning onboard (e2e)', () => {
   beforeEach(async () => {
     register.clear();
     rrClient.request.mockReset();
+    rrClient.publish.mockReset().mockResolvedValue(undefined);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [ProvisioningController],
@@ -135,6 +137,35 @@ describe('Provisioning onboard (e2e)', () => {
       })
       .expect(401)
       .expect({ error: 'INVALID_CREDENTIALS' });
+  });
+
+  it('accepts onboarding without firmwareVersion', () => {
+    rrClient.request
+      .mockResolvedValueOnce({ gateway_id: 'gw-1', tenant_id: 'tenant-1' })
+      .mockResolvedValueOnce({ success: true });
+
+    const httpServer = app.getHttpServer() as unknown as Parameters<
+      typeof request
+    >[0];
+
+    return request(httpServer)
+      .post('/provision/onboard')
+      .send({
+        credentials: {
+          factoryId: 'factory-1',
+          factoryKey: 'factory-key-1',
+        },
+        csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
+        sendFrequencyMs: 5000,
+      })
+      .expect(201)
+      .expect((res) => {
+        const body = res.body as OnboardHttpResponse;
+        expect(body.identity).toEqual({
+          gatewayId: 'gw-1',
+          tenantId: 'tenant-1',
+        });
+      });
   });
 
   it('returns 400 for malformed CSR', () => {

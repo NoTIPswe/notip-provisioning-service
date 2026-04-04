@@ -65,7 +65,7 @@ export class ForgeCSRSignerService implements CSRSigner {
 
     const cert = forge.pki.createCertificate();
     cert.publicKey = publicKey;
-    cert.serialNumber = forge.util.bytesToHex(forge.random.getBytesSync(16));
+    cert.serialNumber = this.generatePositiveSerialNumber();
 
     cert.validity.notBefore = new Date();
     cert.validity.notAfter = new Date(
@@ -98,5 +98,19 @@ export class ForgeCSRSignerService implements CSRSigner {
 
     cert.sign(caKey, forge.md.sha256.create());
     return cert;
+  }
+
+  // Go's x509 parser rejects certificates with a negative serial number.
+  // Force the most significant bit to 0 so the DER INTEGER stays positive.
+  private generatePositiveSerialNumber(): string {
+    let serialHex = forge.util.bytesToHex(forge.random.getBytesSync(16));
+    const firstByte = parseInt(serialHex.slice(0, 2), 16) & 0x7f;
+    serialHex = firstByte.toString(16).padStart(2, '0') + serialHex.slice(2);
+
+    if (/^0+$/.test(serialHex)) {
+      serialHex = serialHex.slice(0, -1) + '1';
+    }
+
+    return serialHex;
   }
 }

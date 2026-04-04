@@ -4,11 +4,13 @@ import {
   ExecutionContext,
   CallHandler,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import type { Request } from 'express';
 import { ProvisioningResult } from './model/provisioning-result';
+import { NATSRRClient } from '../nats/nats-rr.client';
 import {
   MalformedCSRError,
   InvalidFactoryCredentialsError,
@@ -33,9 +35,22 @@ interface AuditLogEntry {
   tenant_id?: string;
 }
 
+interface NatsAuditLogEntry {
+  userId: string;
+  action: string;
+  resource: string;
+  details: Record<string, unknown>;
+  timestamp: string;
+}
+
+const AUDIT_SUBJECT_PREFIX = 'log.audit.';
+const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000000';
+
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
   private readonly logger = new Logger('AuditLog');
+
+  constructor(@Optional() private readonly natsClient?: NATSRRClient) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -56,6 +71,7 @@ export class AuditLogInterceptor implements NestInterceptor {
           tenant_id: tenantId,
         };
         this.logger.log(JSON.stringify(entry));
+        this.publishAudit(entry);
       }),
       catchError((error) => {
         const outcome = this.mapErrorToOutcome(error);
@@ -66,9 +82,42 @@ export class AuditLogInterceptor implements NestInterceptor {
           outcome,
         };
         this.logger.log(JSON.stringify(entry));
+        this.publishAudit(entry);
         throw error;
       }),
     );
+  }
+
+  private publishAudit(entry: AuditLogEntry): void {
+    if (!entry.tenant_id || !this.natsClient) {
+      return;
+    }
+
+    const subject = `${AUDIT_SUBJECT_PREFIX}${entry.tenant_id}`;
+    const payload: NatsAuditLogEntry = {
+      userId: SYSTEM_USER_ID,
+      action: this.mapOutcomeToAction(entry.outcome),
+      resource: entry.gateway_id || entry.factory_id || 'provisioning/onboard',
+      details: {
+        factoryId: entry.factory_id,
+        sourceIp: entry.source_ip,
+        outcome: entry.outcome,
+        gatewayId: entry.gateway_id,
+        tenantId: entry.tenant_id,
+      },
+      timestamp: entry.timestamp,
+    };
+
+    void this.natsClient.publish(subject, payload).catch((error) => {
+      this.logger.warn(
+        `Failed to publish provisioning audit event on subject ${subject}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+    });
+  }
+
+  private mapOutcomeToAction(outcome: AuditOutcome): string {
+    return `PROVISIONING_ONBOARD_${outcome.toUpperCase()}`;
   }
 
   private extractSourceIp(request: Request): string {

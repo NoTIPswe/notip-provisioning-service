@@ -1,4 +1,4 @@
-import { ArgumentsHost, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, BadRequestException, HttpStatus } from '@nestjs/common';
 import { ProvisioningExceptionFilter } from '../src/provisioning/provisioning-exception.filter';
 import {
   GatewayAlreadyProvisionedError,
@@ -67,5 +67,15 @@ describe('ProvisioningExceptionFilter', () => {
 
     expect(status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
     expect(json).toHaveBeenCalledWith({ error: 'INTERNAL_ERROR' });
+  });
+
+  it('preserves HttpException status and body', () => {
+    const filter = new ProvisioningExceptionFilter();
+    const { host, status, json } = createHost();
+
+    filter.catch(new BadRequestException({ error: 'VALIDATION_FAILED' }), host);
+
+    expect(status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+    expect(json).toHaveBeenCalledWith({ error: 'VALIDATION_FAILED' });
   });
 });

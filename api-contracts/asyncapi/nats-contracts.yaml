@@ -496,6 +496,9 @@ components:
           send_frequency_ms:
             type: integer
             description: Desired telemetry send frequency for the gateway (in milliseconds).
+          firmware_version:
+            type: string
+            description: Optional firmware version to persist when onboarding succeeds.
 
     ProvisioningCompleteResponse:
       name: ProvisioningCompleteResponse

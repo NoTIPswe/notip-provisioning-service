@@ -79,6 +79,43 @@ export class NATSRRClient implements OnModuleInit, OnModuleDestroy {
     throw new ManagementAPIUnavailableError();
   }
 
+  async publish(subject: string, payload: unknown): Promise<void> {
+    const totalAttempts = this.config.NATS_MAX_RETRIES;
+
+    for (let attempt = 1; attempt <= totalAttempts; attempt++) {
+      try {
+        if (!this.nc) {
+          await this.initConnection();
+        }
+
+        if (!this.nc) {
+          throw new ManagementAPIUnavailableError();
+        }
+
+        this.nc.publish(subject, this.jc.encode(payload));
+        return;
+      } catch (error) {
+        if (attempt >= totalAttempts) {
+          throw new ManagementAPIUnavailableError();
+        }
+
+        this.metrics.natsRetries.inc();
+        const backoffMs = Math.pow(2, attempt - 1) * 1000;
+        this.logger.warn(
+          `NATS publish failed for subject ${subject}. Retrying in ${backoffMs}ms`,
+        );
+
+        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+
+        if (error instanceof NatsError) {
+          this.nc = null;
+        }
+      }
+    }
+
+    throw new ManagementAPIUnavailableError();
+  }
+
   private async initConnection(): Promise<void> {
     const options = this.buildConnectionOptions();
     this.nc = await connect(options);

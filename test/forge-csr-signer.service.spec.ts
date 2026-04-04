@@ -69,6 +69,27 @@ describe('ForgeCSRSignerService', () => {
     );
   });
 
+  it('generates a positive certificate serial number', async () => {
+    const caProvider = { getCA: jest.fn().mockReturnValue(buildCA()) };
+    const config = { CERT_TTL_DAYS: 90 };
+    const service = new ForgeCSRSignerService(
+      caProvider as never,
+      config as never,
+    );
+
+    const result = await service.sign(
+      new GatewayCSR(buildValidCsrPem()),
+      new GatewayIdentity('gw-serial', 'tenant-serial'),
+    );
+
+    const cert = forge.pki.certificateFromPem(result.pemData);
+    const serialHex = cert.serialNumber.padStart(2, '0');
+    const firstByte = parseInt(serialHex.slice(0, 2), 16);
+
+    expect(firstByte & 0x80).toBe(0);
+    expect(/^0+$/.test(serialHex)).toBe(false);
+  });
+
   it('throws MalformedCSRError when CSR cannot be parsed', async () => {
     const caProvider = { getCA: jest.fn().mockReturnValue(buildCA()) };
     const config = { CERT_TTL_DAYS: 90 };

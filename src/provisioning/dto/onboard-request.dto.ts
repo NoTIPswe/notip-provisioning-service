@@ -4,8 +4,9 @@ import {
   IsInt,
   Min,
   ValidateNested,
+  IsOptional,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class FactoryCredentialsDto {
@@ -56,11 +57,11 @@ export class OnboardRequestDto {
   @Min(1)
   sendFrequencyMs: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Versione firmware del gateway',
     example: '1.0.0',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  firmwareVersion: string;
+  firmwareVersion?: string;
 }

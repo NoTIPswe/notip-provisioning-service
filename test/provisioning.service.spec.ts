@@ -33,6 +33,7 @@ describe('ProvisioningService', () => {
       new FactoryCredentials('factory-1', 'factory-key-1'),
       new GatewayCSR('-----BEGIN CERTIFICATE REQUEST-----\nabc'),
       5000,
+      '1.2.3',
     );
 
   it('orchestrates successful onboarding in order', async () => {
@@ -64,7 +65,12 @@ describe('ProvisioningService', () => {
       identity,
     );
     expect(keyGenerator.generate).toHaveBeenCalledTimes(1);
-    expect(completer.complete).toHaveBeenCalledWith(identity, aeskey, 5000);
+    expect(completer.complete).toHaveBeenCalledWith(
+      identity,
+      aeskey,
+      5000,
+      '1.2.3',
+    );
 
     expect(metrics.provisioningAttempts.inc).toHaveBeenCalledTimes(1);
     expect(metrics.provisioningSuccesses.inc).toHaveBeenCalledTimes(1);
