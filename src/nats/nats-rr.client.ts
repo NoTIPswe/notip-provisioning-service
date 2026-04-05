@@ -5,7 +5,6 @@ import {
   OnModuleInit,
   OnModuleDestroy,
 } from '@nestjs/common';
-import * as fs from 'node:fs';
 import {
   connect,
   NatsConnection,
@@ -133,16 +132,11 @@ export class NATSRRClient implements OnModuleInit, OnModuleDestroy {
       this.config.NATS_TLS_KEY
     ) {
       this.logger.log('Configuring mTLS for NATS connection');
-      try {
-        (options as any).tls = {
-          ca: [fs.readFileSync(this.config.NATS_TLS_CA)],
-          cert: fs.readFileSync(this.config.NATS_TLS_CERT),
-          key: fs.readFileSync(this.config.NATS_TLS_KEY),
-        };
-      } catch (error) {
-        const msg = error instanceof Error ? error.message : String(error);
-        this.logger.error(`Failed to load TLS certificates: ${msg}`);
-      }
+      options.tls = {
+        caFile: this.config.NATS_TLS_CA,
+        certFile: this.config.NATS_TLS_CERT,
+        keyFile: this.config.NATS_TLS_KEY,
+      };
     }
 
     if (this.config.NATS_CREDENTIALS.includes(':')) {

@@ -89,8 +89,9 @@ describe('AuditLogInterceptor', () => {
   });
 
   it('publishes successful provisioning audit entries to NATS when tenant is available', async () => {
+    const publish = jest.fn().mockResolvedValue(undefined);
     const natsClient = {
-      publish: jest.fn().mockResolvedValue(undefined),
+      publish,
     } as unknown as NATSRRClient;
     const interceptor = new AuditLogInterceptor(natsClient);
 
@@ -114,7 +115,7 @@ describe('AuditLogInterceptor', () => {
 
     await firstValueFrom(interceptor.intercept(context, handler));
 
-    expect(natsClient.publish).toHaveBeenCalledWith(
+    expect(publish).toHaveBeenCalledWith(
       'log.audit.tenant-1',
       expect.objectContaining({
         action: 'PROVISIONING_ONBOARD_SUCCESS',

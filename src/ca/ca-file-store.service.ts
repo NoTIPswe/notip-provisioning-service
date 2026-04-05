@@ -18,10 +18,11 @@ export class CAFileStoreService implements CARepository {
   private readonly natsKeyPath: string;
   private readonly natsCertPath: string;
 
-  constructor(@Inject('CONFIG') private config: ProvisioningConfig) {
+  constructor(@Inject('CONFIG') private readonly config: ProvisioningConfig) {
     this.certsPath = this.config.CA_CERTS_PATH;
 
-    this.caKeyPath = path.join(this.certsPath, 'ca.key');
+    this.caKeyPath =
+      this.config.CA_KEY_PATH || path.join(this.certsPath, 'ca.key');
     this.caCertPath = path.join(this.certsPath, 'ca.crt');
 
     this.natsKeyPath = path.join(this.certsPath, 'nats.key');

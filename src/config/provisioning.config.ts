@@ -4,6 +4,7 @@ export interface ProvisioningConfig {
   NATS_REQUEST_TIMEOUT_MS: number;
   NATS_MAX_RETRIES: number;
   CA_CERTS_PATH: string;
+  CA_KEY_PATH?: string;
   CERT_TTL_DAYS: number;
   PORT: number;
   NATS_TLS_CA?: string;
@@ -29,6 +30,7 @@ export const loadConfig = (): ProvisioningConfig => ({
   ),
   NATS_MAX_RETRIES: Number.parseInt(process.env.NATS_MAX_RETRIES || '3', 10),
   CA_CERTS_PATH: process.env.CA_CERTS_PATH || '/certs',
+  CA_KEY_PATH: process.env.CA_KEY_PATH,
   CERT_TTL_DAYS: Number.parseInt(process.env.CERT_TTL_DAYS || '90', 10),
   PORT: Number.parseInt(process.env.PORT || '3004', 10),
   NATS_TLS_CA: process.env.NATS_TLS_CA,
