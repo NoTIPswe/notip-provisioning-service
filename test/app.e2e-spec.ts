@@ -14,20 +14,15 @@ import { SignedCertificate } from '../src/ca/model/signed-certificate';
 import { register } from 'prom-client';
 
 type OnboardHttpResponse = {
-  certPem?: unknown;
-  aesKey?: unknown;
-  identity?: {
-    gatewayId?: unknown;
-    tenantId?: unknown;
-  };
-  sendFrequencyMs?: unknown;
+  certificate?: unknown;
+  aeskey?: unknown;
+  send_frequency_ms?: unknown;
 };
 
 describe('Provisioning onboard (e2e)', () => {
   let app: INestApplication;
   const rrClient = {
     request: jest.fn(),
-    publish: jest.fn().mockResolvedValue(undefined),
   };
   const csrSigner = {
     sign: jest.fn().mockResolvedValue(new SignedCertificate('CERT_PEM')),
@@ -36,7 +31,6 @@ describe('Provisioning onboard (e2e)', () => {
   beforeEach(async () => {
     register.clear();
     rrClient.request.mockReset();
-    rrClient.publish.mockReset().mockResolvedValue(undefined);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [ProvisioningController],
@@ -84,7 +78,7 @@ describe('Provisioning onboard (e2e)', () => {
     await app.close();
   });
 
-  it('returns 201 with certPem, aesKey and identity on successful onboarding', () => {
+  it('returns 201 with certificate and aeskey on successful onboarding', () => {
     rrClient.request
       .mockResolvedValueOnce({ gateway_id: 'gw-1', tenant_id: 'tenant-1' })
       .mockResolvedValueOnce({ success: true });
@@ -96,24 +90,17 @@ describe('Provisioning onboard (e2e)', () => {
     return request(httpServer)
       .post('/provision/onboard')
       .send({
-        credentials: {
-          factoryId: 'factory-1',
-          factoryKey: 'factory-key-1',
-        },
+        factory_id: 'factory-1',
+        factory_key: 'factory-key-1',
         csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
-        sendFrequencyMs: 5000,
-        firmwareVersion: '1.0.0',
+        send_frequency_ms: 5000,
       })
       .expect(201)
       .expect((res) => {
         const body = res.body as OnboardHttpResponse;
-        expect(body.certPem).toBe('CERT_PEM');
-        expect(typeof body.aesKey).toBe('string');
-        expect(body.identity).toEqual({
-          gatewayId: 'gw-1',
-          tenantId: 'tenant-1',
-        });
-        expect(body.sendFrequencyMs).toBe(5000);
+        expect(body.certificate).toBe('CERT_PEM');
+        expect(typeof body.aeskey).toBe('string');
+        expect(body.send_frequency_ms).toBe(5000);
       });
   });
 
@@ -127,45 +114,13 @@ describe('Provisioning onboard (e2e)', () => {
     return request(httpServer)
       .post('/provision/onboard')
       .send({
-        credentials: {
-          factoryId: 'factory-1',
-          factoryKey: 'wrong-key',
-        },
+        factory_id: 'factory-1',
+        factory_key: 'wrong-key',
         csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
-        sendFrequencyMs: 5000,
-        firmwareVersion: '1.0.0',
+        send_frequency_ms: 5000,
       })
       .expect(401)
       .expect({ error: 'INVALID_CREDENTIALS' });
-  });
-
-  it('accepts onboarding without firmwareVersion', () => {
-    rrClient.request
-      .mockResolvedValueOnce({ gateway_id: 'gw-1', tenant_id: 'tenant-1' })
-      .mockResolvedValueOnce({ success: true });
-
-    const httpServer = app.getHttpServer() as unknown as Parameters<
-      typeof request
-    >[0];
-
-    return request(httpServer)
-      .post('/provision/onboard')
-      .send({
-        credentials: {
-          factoryId: 'factory-1',
-          factoryKey: 'factory-key-1',
-        },
-        csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
-        sendFrequencyMs: 5000,
-      })
-      .expect(201)
-      .expect((res) => {
-        const body = res.body as OnboardHttpResponse;
-        expect(body.identity).toEqual({
-          gatewayId: 'gw-1',
-          tenantId: 'tenant-1',
-        });
-      });
   });
 
   it('returns 400 for malformed CSR', () => {
@@ -176,15 +131,31 @@ describe('Provisioning onboard (e2e)', () => {
     return request(httpServer)
       .post('/provision/onboard')
       .send({
-        credentials: {
-          factoryId: 'factory-1',
-          factoryKey: 'factory-key-1',
-        },
+        factory_id: 'factory-1',
+        factory_key: 'factory-key-1',
         csr: 'invalid-csr',
-        sendFrequencyMs: 5000,
-        firmwareVersion: '1.0.0',
+        send_frequency_ms: 5000,
       })
       .expect(400)
       .expect({ error: 'MALFORMED_CSR' });
+  });
+
+  it('returns 503 when factory validation response is malformed', () => {
+    rrClient.request.mockResolvedValueOnce({ ok: true });
+
+    const httpServer = app.getHttpServer() as unknown as Parameters<
+      typeof request
+    >[0];
+
+    return request(httpServer)
+      .post('/provision/onboard')
+      .send({
+        factory_id: 'factory-1',
+        factory_key: 'factory-key-1',
+        csr: '-----BEGIN CERTIFICATE REQUEST-----\nabc',
+        send_frequency_ms: 5000,
+      })
+      .expect(503)
+      .expect({ error: 'SERVICE_UNAVAILABLE' });
   });
 });
