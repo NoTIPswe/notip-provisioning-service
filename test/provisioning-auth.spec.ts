@@ -33,6 +33,7 @@ describe('Provisioning auth coverage', () => {
     let app: INestApplication;
     const rrClient = {
       request: jest.fn(),
+      publish: jest.fn().mockResolvedValue(undefined),
     };
     const csrSigner = {
       sign: jest.fn().mockResolvedValue(new SignedCertificate('CERT_PEM')),
@@ -41,6 +42,8 @@ describe('Provisioning auth coverage', () => {
     beforeEach(async () => {
       register.clear();
       rrClient.request.mockReset();
+      rrClient.publish.mockReset();
+      rrClient.publish.mockResolvedValue(undefined);
 
       const moduleFixture: TestingModule = await Test.createTestingModule({
         controllers: [ProvisioningController],
@@ -97,10 +100,12 @@ describe('Provisioning auth coverage', () => {
       return request(httpServer)
         .post('/provision/onboard')
         .send({
-          factory_id: 'factory-1',
-          factory_key: 'wrong-key',
+          credentials: {
+            factoryId: 'factory-1',
+            factoryKey: 'wrong-key',
+          },
           csr: '-----BEGIN CERTIFICATE REQUEST-----\nabc',
-          send_frequency_ms: 5000,
+          sendFrequencyMs: 5000,
         })
         .expect(401)
         .expect({ error: 'INVALID_CREDENTIALS' });
@@ -114,10 +119,12 @@ describe('Provisioning auth coverage', () => {
       return request(httpServer)
         .post('/provision/onboard')
         .send({
-          factory_id: 'factory-1',
-          factory_key: 'factory-key-1',
+          credentials: {
+            factoryId: 'factory-1',
+            factoryKey: 'factory-key-1',
+          },
           csr: 'invalid-csr',
-          send_frequency_ms: 5000,
+          sendFrequencyMs: 5000,
         })
         .expect(400)
         .expect({ error: 'MALFORMED_CSR' });

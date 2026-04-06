@@ -8,22 +8,35 @@ import { CAUninitializedError } from '../src/ca/model/errors';
 describe('CAFileStoreService', () => {
   let certsPath: string;
 
-  const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const pause = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
   const buildServiceWithMockedGeneration = () => {
     const service = new CAFileStoreService({
       CA_CERTS_PATH: certsPath,
     } as never);
 
+    type ServiceWithMockableGeneration = {
+      generateCA: () => CAMaterial;
+      generateNATSServerCert: (caMaterial: CAMaterial) => {
+        keyPem: string;
+        certPem: string;
+      };
+    };
+
+    const serviceForTest = service as unknown as ServiceWithMockableGeneration;
+
     const fakeCa = new CAMaterial(
       '-----BEGIN PRIVATE KEY-----\nfake-ca-key\n-----END PRIVATE KEY-----',
       '-----BEGIN CERTIFICATE-----\nfake-ca-cert\n-----END CERTIFICATE-----',
     );
 
-    (service as any).generateCA = jest.fn().mockReturnValue(fakeCa);
-    (service as any).generateNATSServerCert = jest.fn().mockReturnValue({
-      keyPem: '-----BEGIN PRIVATE KEY-----\nfake-nats-key\n-----END PRIVATE KEY-----',
-      certPem: '-----BEGIN CERTIFICATE-----\nfake-nats-cert\n-----END CERTIFICATE-----',
+    serviceForTest.generateCA = jest.fn().mockReturnValue(fakeCa);
+    serviceForTest.generateNATSServerCert = jest.fn().mockReturnValue({
+      keyPem:
+        '-----BEGIN PRIVATE KEY-----\nfake-nats-key\n-----END PRIVATE KEY-----',
+      certPem:
+        '-----BEGIN CERTIFICATE-----\nfake-nats-cert\n-----END CERTIFICATE-----',
     });
 
     return { service, fakeCa };

@@ -14,15 +14,16 @@ import { SignedCertificate } from '../src/ca/model/signed-certificate';
 import { register } from 'prom-client';
 
 type OnboardHttpResponse = {
-  certificate?: unknown;
-  aeskey?: unknown;
-  send_frequency_ms?: unknown;
+  certPem?: unknown;
+  aesKey?: unknown;
+  sendFrequencyMs?: unknown;
 };
 
 describe('Provisioning onboard (e2e)', () => {
   let app: INestApplication;
   const rrClient = {
     request: jest.fn(),
+    publish: jest.fn().mockResolvedValue(undefined),
   };
   const csrSigner = {
     sign: jest.fn().mockResolvedValue(new SignedCertificate('CERT_PEM')),
@@ -31,6 +32,8 @@ describe('Provisioning onboard (e2e)', () => {
   beforeEach(async () => {
     register.clear();
     rrClient.request.mockReset();
+    rrClient.publish.mockReset();
+    rrClient.publish.mockResolvedValue(undefined);
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [ProvisioningController],
@@ -90,17 +93,19 @@ describe('Provisioning onboard (e2e)', () => {
     return request(httpServer)
       .post('/provision/onboard')
       .send({
-        factory_id: 'factory-1',
-        factory_key: 'factory-key-1',
+        credentials: {
+          factoryId: 'factory-1',
+          factoryKey: 'factory-key-1',
+        },
         csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
-        send_frequency_ms: 5000,
+        sendFrequencyMs: 5000,
       })
       .expect(201)
       .expect((res) => {
         const body = res.body as OnboardHttpResponse;
-        expect(body.certificate).toBe('CERT_PEM');
-        expect(typeof body.aeskey).toBe('string');
-        expect(body.send_frequency_ms).toBe(5000);
+        expect(body.certPem).toBe('CERT_PEM');
+        expect(typeof body.aesKey).toBe('string');
+        expect(body.sendFrequencyMs).toBe(5000);
       });
   });
 
@@ -114,10 +119,12 @@ describe('Provisioning onboard (e2e)', () => {
     return request(httpServer)
       .post('/provision/onboard')
       .send({
-        factory_id: 'factory-1',
-        factory_key: 'wrong-key',
+        credentials: {
+          factoryId: 'factory-1',
+          factoryKey: 'wrong-key',
+        },
         csr: '-----BEGIN CERTIFICATE REQUEST-----\\nabc',
-        send_frequency_ms: 5000,
+        sendFrequencyMs: 5000,
       })
       .expect(401)
       .expect({ error: 'INVALID_CREDENTIALS' });
@@ -131,10 +138,12 @@ describe('Provisioning onboard (e2e)', () => {
     return request(httpServer)
       .post('/provision/onboard')
       .send({
-        factory_id: 'factory-1',
-        factory_key: 'factory-key-1',
+        credentials: {
+          factoryId: 'factory-1',
+          factoryKey: 'factory-key-1',
+        },
         csr: 'invalid-csr',
-        send_frequency_ms: 5000,
+        sendFrequencyMs: 5000,
       })
       .expect(400)
       .expect({ error: 'MALFORMED_CSR' });
@@ -150,10 +159,12 @@ describe('Provisioning onboard (e2e)', () => {
     return request(httpServer)
       .post('/provision/onboard')
       .send({
-        factory_id: 'factory-1',
-        factory_key: 'factory-key-1',
+        credentials: {
+          factoryId: 'factory-1',
+          factoryKey: 'factory-key-1',
+        },
         csr: '-----BEGIN CERTIFICATE REQUEST-----\nabc',
-        send_frequency_ms: 5000,
+        sendFrequencyMs: 5000,
       })
       .expect(503)
       .expect({ error: 'SERVICE_UNAVAILABLE' });
