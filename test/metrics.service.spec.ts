@@ -1,6 +1,11 @@
 import { collectDefaultMetrics, Counter, Gauge, Histogram } from 'prom-client';
 import { MetricsService } from '../src/metrics/metrics.service';
 
+const mockCounterInc = jest.fn();
+const mockGaugeInc = jest.fn();
+const mockGaugeDec = jest.fn();
+const mockHistogramObserve = jest.fn();
+
 jest.mock('prom-client', () => ({
   collectDefaultMetrics: jest.fn(),
   register: {
@@ -8,14 +13,14 @@ jest.mock('prom-client', () => ({
     metrics: jest.fn().mockResolvedValue('metrics-payload'),
   },
   Counter: jest.fn().mockImplementation(() => ({
-    inc: jest.fn(),
+    inc: mockCounterInc,
   })),
   Gauge: jest.fn().mockImplementation(() => ({
-    inc: jest.fn(),
-    dec: jest.fn(),
+    inc: mockGaugeInc,
+    dec: mockGaugeDec,
   })),
   Histogram: jest.fn().mockImplementation(() => ({
-    observe: jest.fn(),
+    observe: mockHistogramObserve,
   })),
 }));
 
@@ -41,22 +46,19 @@ describe('MetricsService', () => {
 
   it('updates HTTP metric primitives', () => {
     const service = new MetricsService();
-    const counterInstance = (Counter as unknown as jest.Mock).mock.results[0].value;
-    const histogramInstance = (Histogram as unknown as jest.Mock).mock.results[0].value;
-    const gaugeInstance = (Gauge as unknown as jest.Mock).mock.results[0].value;
 
     service.incInFlight('POST');
     service.decInFlight('POST');
     service.observeHttpRequest('POST', '/provision/onboard', 201, 0.123);
 
-    expect(gaugeInstance.inc).toHaveBeenCalledWith({ method: 'POST' });
-    expect(gaugeInstance.dec).toHaveBeenCalledWith({ method: 'POST' });
-    expect(counterInstance.inc).toHaveBeenCalledWith({
+    expect(mockGaugeInc).toHaveBeenCalledWith({ method: 'POST' });
+    expect(mockGaugeDec).toHaveBeenCalledWith({ method: 'POST' });
+    expect(mockCounterInc).toHaveBeenCalledWith({
       method: 'POST',
       route: '/provision/onboard',
       status_code: '201',
     });
-    expect(histogramInstance.observe).toHaveBeenCalledWith(
+    expect(mockHistogramObserve).toHaveBeenCalledWith(
       {
         method: 'POST',
         route: '/provision/onboard',
@@ -70,11 +72,14 @@ describe('MetricsService', () => {
     const service = new MetricsService();
 
     expect(
-      service.resolveRouteLabel({ baseUrl: '/api', route: { path: '/metrics' } }),
+      service.resolveRouteLabel({
+        baseUrl: '/api',
+        route: { path: '/metrics' },
+      }),
     ).toBe('/api/metrics');
-    expect(
-      service.resolveRouteLabel({ route: { path: ['/a', '/b'] } }),
-    ).toBe('/a|/b');
+    expect(service.resolveRouteLabel({ route: { path: ['/a', '/b'] } })).toBe(
+      '/a|/b',
+    );
     expect(service.resolveRouteLabel({ route: { path: 123 } })).toBe(
       '_unmatched',
     );

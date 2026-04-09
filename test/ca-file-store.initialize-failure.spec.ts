@@ -1,7 +1,6 @@
 jest.mock('node:fs/promises', () => {
-  const actual = jest.requireActual<typeof import('node:fs/promises')>(
-    'node:fs/promises',
-  );
+  const actual =
+    jest.requireActual<typeof import('node:fs/promises')>('node:fs/promises');
 
   return {
     ...actual,
@@ -18,11 +17,11 @@ describe('CAFileStoreService initialize failures', () => {
   it('wraps write failures in CAUninitializedError', async () => {
     const service = new CAFileStoreService({
       CA_CERTS_PATH: '/tmp/notip-ca-failure',
-    } as any);
+    } as never);
 
-    jest.spyOn(service as any, 'generateCA').mockReturnValue(
-      new CAMaterial('CA_PRIVATE_PEM', 'CA_CERT_PEM'),
-    );
+    jest
+      .spyOn(service as any, 'generateCA')
+      .mockReturnValue(new CAMaterial('CA_PRIVATE_PEM', 'CA_CERT_PEM'));
     jest.spyOn(service as any, 'generateNATSServerCert').mockReturnValue({
       keyPem: 'NATS_PRIVATE_PEM',
       certPem: 'NATS_CERT_PEM',

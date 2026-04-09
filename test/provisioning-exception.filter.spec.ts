@@ -88,7 +88,10 @@ describe('ProvisioningExceptionFilter', () => {
     const filter = new ProvisioningExceptionFilter();
     const { host, status, json } = createHost();
 
-    filter.catch(new HttpException('VALIDATION_FAILED', HttpStatus.BAD_REQUEST), host);
+    filter.catch(
+      new HttpException('VALIDATION_FAILED', HttpStatus.BAD_REQUEST),
+      host,
+    );
 
     expect(status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     expect(json).toHaveBeenCalledWith({ error: 'VALIDATION_FAILED' });

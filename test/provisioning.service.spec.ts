@@ -212,7 +212,7 @@ describe('ProvisioningService', () => {
     };
     const keyGenerator = {
       generate: jest.fn().mockImplementation(() => {
-        throw 'boom';
+        throw new Error('boom');
       }),
     };
     const completer = { complete: jest.fn() };
@@ -226,7 +226,7 @@ describe('ProvisioningService', () => {
       metrics as never,
     );
 
-    await expect(service.onboard(buildRequest())).rejects.toBe('boom');
+    await expect(service.onboard(buildRequest())).rejects.toThrow('boom');
     expect(metrics.provisioningFailures.labels).toHaveBeenCalledWith('error');
   });
 });

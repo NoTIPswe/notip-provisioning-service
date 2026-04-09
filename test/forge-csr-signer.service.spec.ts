@@ -167,7 +167,9 @@ describe('ForgeCSRSignerService', () => {
 
     await expect(
       service.sign(
-        new GatewayCSR('-----BEGIN CERTIFICATE REQUEST-----\nmissing-public-key'),
+        new GatewayCSR(
+          '-----BEGIN CERTIFICATE REQUEST-----\nmissing-public-key',
+        ),
         new GatewayIdentity('gw-1', 'tenant-1'),
       ),
     ).rejects.toBeInstanceOf(MalformedCSRError);

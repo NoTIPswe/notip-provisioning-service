@@ -24,7 +24,9 @@ describe('MetricsInterceptor', () => {
       handle: () => of('ok'),
     };
 
-    await expect(firstValueFrom(interceptor.intercept(context, handler))).resolves.toBe('ok');
+    await expect(
+      firstValueFrom(interceptor.intercept(context, handler)),
+    ).resolves.toBe('ok');
 
     expect(metricsService.incInFlight).not.toHaveBeenCalled();
     expect(metricsService.observeHttpRequest).not.toHaveBeenCalled();
@@ -54,7 +56,9 @@ describe('MetricsInterceptor', () => {
       handle: () => of('ok'),
     };
 
-    await expect(firstValueFrom(interceptor.intercept(context, handler))).resolves.toBe('ok');
+    await expect(
+      firstValueFrom(interceptor.intercept(context, handler)),
+    ).resolves.toBe('ok');
 
     expect(metricsService.incInFlight).toHaveBeenCalledWith('GET');
     expect(metricsService.resolveRouteLabel).toHaveBeenCalled();

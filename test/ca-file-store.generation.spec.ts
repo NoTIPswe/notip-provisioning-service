@@ -94,17 +94,17 @@ describe('CAFileStoreService generation path', () => {
     expect(material.privateKeyPem).toBe('CA_PRIVATE_PEM');
     expect(material.certificatePem).toBe('CA_CERT_PEM');
 
-    await expect(fs.readFile(path.join(certsPath, 'ca.key'), 'utf8')).resolves.toBe(
-      'CA_PRIVATE_PEM',
-    );
-    await expect(fs.readFile(path.join(certsPath, 'ca.crt'), 'utf8')).resolves.toBe(
-      'CA_CERT_PEM',
-    );
-    await expect(fs.readFile(path.join(certsPath, 'nats.key'), 'utf8')).resolves.toBe(
-      'NATS_PRIVATE_PEM',
-    );
-    await expect(fs.readFile(path.join(certsPath, 'nats.crt'), 'utf8')).resolves.toBe(
-      'NATS_CERT_PEM',
-    );
+    await expect(
+      fs.readFile(path.join(certsPath, 'ca.key'), 'utf8'),
+    ).resolves.toBe('CA_PRIVATE_PEM');
+    await expect(
+      fs.readFile(path.join(certsPath, 'ca.crt'), 'utf8'),
+    ).resolves.toBe('CA_CERT_PEM');
+    await expect(
+      fs.readFile(path.join(certsPath, 'nats.key'), 'utf8'),
+    ).resolves.toBe('NATS_PRIVATE_PEM');
+    await expect(
+      fs.readFile(path.join(certsPath, 'nats.crt'), 'utf8'),
+    ).resolves.toBe('NATS_CERT_PEM');
   });
 });

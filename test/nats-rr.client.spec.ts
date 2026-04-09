@@ -123,7 +123,7 @@ describe('NATSRRClient', () => {
 
   it('returns decoded payload on successful request', async () => {
     const mockConnection = buildMockConnection();
-    (mockConnection.request as jest.Mock).mockResolvedValue({
+    mockConnection.request.mockResolvedValue({
       data: jc.encode({ ok: true }),
     });
 
@@ -201,9 +201,7 @@ describe('NATSRRClient', () => {
 
   it('retries and throws ManagementAPIUnavailableError after max attempts', async () => {
     const mockConnection = buildMockConnection();
-    (mockConnection.request as jest.Mock).mockRejectedValue(
-      new Error('nats down'),
-    );
+    mockConnection.request.mockRejectedValue(new Error('nats down'));
 
     const connectMock = connect as jest.MockedFunction<typeof connect>;
     connectMock.mockResolvedValue(mockConnection as unknown as NatsConnection);
@@ -229,12 +227,12 @@ describe('NATSRRClient', () => {
 
   it('reconnects on NatsError and succeeds on a later attempt', async () => {
     const firstConnection = buildMockConnection();
-    (firstConnection.request as jest.Mock).mockRejectedValue(
+    firstConnection.request.mockRejectedValue(
       new NatsError('connection issue', 'CONNECTION_ERROR'),
     );
 
     const secondConnection = buildMockConnection();
-    (secondConnection.request as jest.Mock).mockResolvedValue({
+    secondConnection.request.mockResolvedValue({
       data: jc.encode({ ok: true }),
     });
 
