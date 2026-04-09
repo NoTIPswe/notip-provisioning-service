@@ -30,4 +30,32 @@ describe('main bootstrap', () => {
     expect(get).toHaveBeenCalledWith('CONFIG');
     expect(listen).toHaveBeenCalledWith(3456);
   });
+
+  it('falls back to the default port when config.PORT is missing', async () => {
+    const enableShutdownHooks = jest.fn();
+    const useGlobalPipes = jest.fn();
+    const listen = jest.fn().mockResolvedValue(undefined);
+    const get = jest.fn().mockReturnValue({});
+
+    const create = jest.fn().mockResolvedValue({
+      enableShutdownHooks,
+      useGlobalPipes,
+      listen,
+      get,
+    });
+
+    jest.resetModules();
+    jest.doMock('../src/app.module', () => ({
+      AppModule: class AppModuleMock {},
+    }));
+    jest.doMock('@nestjs/core', () => ({
+      NestFactory: { create },
+    }));
+
+    jest.requireActual<typeof import('../src/main')>('../src/main');
+
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(listen).toHaveBeenCalledWith(3004);
+  });
 });

@@ -124,6 +124,64 @@ describe('AuditLogInterceptor', () => {
     );
   });
 
+  it('falls back to top-level factory_id when nested credentials are missing', async () => {
+    const interceptor = new AuditLogInterceptor();
+    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+
+    const request: RequestLike = {
+      body: {
+        factory_id: 'factory-top-level',
+      },
+      headers: {},
+      provisioningResult: new ProvisioningResult(
+        new SignedCertificate('CERT'),
+        new AESKey(Buffer.alloc(32, 1)),
+        new GatewayIdentity('gw-1', 'tenant-1'),
+        5000,
+      ),
+    };
+
+    const context = createContext(request);
+    const handler: CallHandler = { handle: () => of('ok') };
+
+    await firstValueFrom(interceptor.intercept(context, handler));
+
+    const payload = latestPayload(logSpy);
+    expect(payload.factory_id).toBe('factory-top-level');
+  });
+
+  it('logs a warning when audit publish fails', async () => {
+    const publish = jest.fn().mockRejectedValue(new Error('publish failed'));
+    const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    const natsClient = {
+      publish,
+    } as unknown as NATSRRClient;
+    const interceptor = new AuditLogInterceptor(natsClient);
+
+    const request: RequestLike = {
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
+      headers: {},
+      provisioningResult: new ProvisioningResult(
+        new SignedCertificate('CERT'),
+        new AESKey(Buffer.alloc(32, 1)),
+        new GatewayIdentity('gw-1', 'tenant-1'),
+        5000,
+      ),
+    };
+
+    const context = createContext(request);
+    const handler: CallHandler = { handle: () => of('ok') };
+
+    await firstValueFrom(interceptor.intercept(context, handler));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('logs mapped failure outcome and rethrows', async () => {
     const interceptor = new AuditLogInterceptor();
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
