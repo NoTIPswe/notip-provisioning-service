@@ -2,6 +2,7 @@ import {
   ArgumentsHost,
   Catch,
   ExceptionFilter,
+  HttpException,
   HttpStatus,
 } from '@nestjs/common';
 import type { Response } from 'express';
@@ -17,6 +18,15 @@ import {
 export class ProvisioningExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();
+
+    if (exception instanceof HttpException) {
+      const status = exception.getStatus();
+      const body = exception.getResponse();
+      response
+        .status(status)
+        .json(typeof body === 'string' ? { error: body } : body);
+      return;
+    }
 
     if (exception instanceof MalformedCSRError) {
       response.status(HttpStatus.BAD_REQUEST).json({ error: 'MALFORMED_CSR' });

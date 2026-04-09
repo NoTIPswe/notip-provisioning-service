@@ -43,6 +43,7 @@ export class ProvisioningService implements OnboardGateway {
         identity,
         aeskey,
         request.sendFrequencyMs,
+        request.firmwareVersion,
       );
       this.metrics.natsCompleteDuration.observe(Date.now() - completeStart);
 

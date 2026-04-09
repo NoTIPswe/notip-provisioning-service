@@ -13,15 +13,21 @@ export class NATSProvisioningCompleter implements ProvisioningCompleter {
     identity: GatewayIdentity,
     aeskey: AESKey,
     sendFrequencyMs: number,
+    firmwareVersion: string,
   ): Promise<void> {
+    const payload: Record<string, unknown> = {
+      gateway_id: identity.gatewayId,
+      key_material: aeskey.toBase64(),
+      key_version: aeskey.version,
+      send_frequency_ms: sendFrequencyMs,
+    };
+    if (firmwareVersion.trim() !== '') {
+      payload.firmware_version = firmwareVersion;
+    }
+
     const response = await this.rrClient.request<unknown>(
       'internal.mgmt.provisioning.complete',
-      {
-        gateway_id: identity.gatewayId,
-        key_material: aeskey.toBase64(),
-        key_version: aeskey.version,
-        send_frequency_ms: sendFrequencyMs,
-      },
+      payload,
     );
 
     if (!this.isRecord(response) || response.success !== true) {

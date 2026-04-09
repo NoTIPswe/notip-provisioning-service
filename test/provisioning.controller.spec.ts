@@ -31,10 +31,13 @@ describe('ProvisioningController', () => {
     const controller = new ProvisioningController(gateway);
 
     const body: OnboardRequestDto = {
-      factory_id: 'factory-1',
-      factory_key: 'secret-1',
+      credentials: {
+        factoryId: 'factory-1',
+        factoryKey: 'secret-1',
+      },
       csr: '-----BEGIN CERTIFICATE REQUEST-----\nabc',
-      send_frequency_ms: 5000,
+      sendFrequencyMs: 5000,
+      firmwareVersion: '1.2.3',
     };
 
     const req = {} as Request;
@@ -46,12 +49,17 @@ describe('ProvisioningController', () => {
     expect(capturedRequest?.credentials.factoryKey).toBe('secret-1');
     expect(capturedRequest?.csr.pemData).toBe(body.csr);
     expect(capturedRequest?.sendFrequencyMs).toBe(5000);
+    expect(capturedRequest?.firmwareVersion).toBe('1.2.3');
 
     expect(req.provisioningResult).toBe(result);
     expect(response).toEqual({
-      certificate: 'CERT_PEM',
-      aeskey: result.aeskey.toBase64(),
-      send_frequency_ms: 5000,
+      certPem: 'CERT_PEM',
+      aesKey: result.aeskey.toBase64(),
+      identity: {
+        gatewayId: 'gw-1',
+        tenantId: 'tenant-1',
+      },
+      sendFrequencyMs: 5000,
     });
   });
 
@@ -64,10 +72,13 @@ describe('ProvisioningController', () => {
     const controller = new ProvisioningController(gateway);
 
     const body: OnboardRequestDto = {
-      factory_id: 'factory-1',
-      factory_key: 'secret-1',
+      credentials: {
+        factoryId: 'factory-1',
+        factoryKey: 'secret-1',
+      },
       csr: 'invalid-csr',
-      send_frequency_ms: 5000,
+      sendFrequencyMs: 5000,
+      firmwareVersion: '1.2.3',
     };
 
     const req = {} as Request;

@@ -42,12 +42,12 @@ describe('Module smoke tests', () => {
   it('instantiates low-level DTO/model classes', () => {
     const cert = new NATSServerCertificate('key', 'cert');
     const dto = new OnboardResponseDto();
-    dto.certificate = 'pem';
-    dto.aeskey = 'base64';
+    dto.certPem = 'pem';
+    dto.aesKey = 'base64';
 
     expect(cert.keyPem).toBe('key');
     expect(cert.certPem).toBe('cert');
-    expect(dto.certificate).toBe('pem');
-    expect(dto.aeskey).toBe('base64');
+    expect(dto.certPem).toBe('pem');
+    expect(dto.aesKey).toBe('base64');
   });
 });

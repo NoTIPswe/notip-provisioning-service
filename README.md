@@ -10,21 +10,24 @@ nei @ApiProperty ci sta example e description su ogni campo (questi file sono vi
 - URL esposta da Nginx: /api/provision/onboard
 - Metodo: POST
 - Porta: 3004
-- Auth: tramite: factory_id e factory_key nel body
+- Auth: tramite credentials.factoryId e credentials.factoryKey nel body
 
 #### Struttura del Payload
 
-- factory_id: stringa che identifica il gateway
-- factory_key: stringa segreta monouso che verrà validata tramite bcrypt nel Management API
+- credentials: oggetto con le credenziali factory
+- credentials.factoryId: stringa che identifica il gateway
+- credentials.factoryKey: stringa segreta monouso che verrà validata tramite bcrypt nel Management API
 - csr: stringa in formato PEM che deve iniziare obbligatoriamente con "-----BEGIN CERTIFICATE REQUEST-----"
-- send_frequency_ms: frequenza di invio telemetria in millisecondi (intero > 0)
+- sendFrequencyMs: frequenza di invio telemetria in millisecondi (intero > 0)
+- firmwareVersion: versione firmware del gateway
 
 #### Schema di risposta
 
 - 201 Created
-- certificate: certificato firmato
-- aeskey: la chiave AES-256 in base64
-- send_frequency_ms: frequenza di invio telemetria in millisecondi
+- certPem: certificato firmato
+- aesKey: la chiave AES-256 in base64
+- identity: oggetto con gatewayId e tenantId
+- sendFrequencyMs: frequenza di invio telemetria in millisecondi
 
 #### Errori
 

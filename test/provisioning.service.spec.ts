@@ -6,6 +6,7 @@ import { GatewayIdentity } from '../src/provisioning/model/gateway-identity';
 import { SignedCertificate } from '../src/ca/model/signed-certificate';
 import { AESKey } from '../src/provisioning/model/aes-key';
 import {
+  ManagementAPIUnavailableError,
   InvalidFactoryCredentialsError,
   MalformedCSRError,
 } from '../src/provisioning/model/errors';
@@ -33,6 +34,7 @@ describe('ProvisioningService', () => {
       new FactoryCredentials('factory-1', 'factory-key-1'),
       new GatewayCSR('-----BEGIN CERTIFICATE REQUEST-----\nabc'),
       5000,
+      '1.2.3',
     );
 
   it('orchestrates successful onboarding in order', async () => {
@@ -64,7 +66,12 @@ describe('ProvisioningService', () => {
       identity,
     );
     expect(keyGenerator.generate).toHaveBeenCalledTimes(1);
-    expect(completer.complete).toHaveBeenCalledWith(identity, aeskey, 5000);
+    expect(completer.complete).toHaveBeenCalledWith(
+      identity,
+      aeskey,
+      5000,
+      '1.2.3',
+    );
 
     expect(metrics.provisioningAttempts.inc).toHaveBeenCalledTimes(1);
     expect(metrics.provisioningSuccesses.inc).toHaveBeenCalledTimes(1);
@@ -164,6 +171,62 @@ describe('ProvisioningService', () => {
     );
 
     await expect(service.onboard(buildRequest())).rejects.toThrow('unexpected');
+    expect(metrics.provisioningFailures.labels).toHaveBeenCalledWith('error');
+  });
+
+  it('maps management API failures to service_unavailable reason', async () => {
+    const factoryValidator = {
+      validate: jest
+        .fn()
+        .mockRejectedValue(new ManagementAPIUnavailableError()),
+    };
+    const csrSigner = { sign: jest.fn() };
+    const keyGenerator = { generate: jest.fn() };
+    const completer = { complete: jest.fn() };
+    const metrics = buildMetrics();
+
+    const service = new ProvisioningService(
+      factoryValidator as never,
+      completer as never,
+      csrSigner as never,
+      keyGenerator as never,
+      metrics as never,
+    );
+
+    await expect(service.onboard(buildRequest())).rejects.toBeInstanceOf(
+      ManagementAPIUnavailableError,
+    );
+
+    expect(metrics.provisioningFailures.labels).toHaveBeenCalledWith(
+      'service_unavailable',
+    );
+  });
+
+  it('maps non-Error failures to generic error reason', async () => {
+    const identity = new GatewayIdentity('gw-1', 'tenant-1');
+    const factoryValidator = {
+      validate: jest.fn().mockResolvedValue(identity),
+    };
+    const csrSigner = {
+      sign: jest.fn().mockResolvedValue(new SignedCertificate('CERT')),
+    };
+    const keyGenerator = {
+      generate: jest.fn().mockImplementation(() => {
+        throw new Error('boom');
+      }),
+    };
+    const completer = { complete: jest.fn() };
+    const metrics = buildMetrics();
+
+    const service = new ProvisioningService(
+      factoryValidator as never,
+      completer as never,
+      csrSigner as never,
+      keyGenerator as never,
+      metrics as never,
+    );
+
+    await expect(service.onboard(buildRequest())).rejects.toThrow('boom');
     expect(metrics.provisioningFailures.labels).toHaveBeenCalledWith('error');
   });
 });

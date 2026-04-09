@@ -15,6 +15,6 @@ import { NATSProvisioningCompleter } from './nats-provisioning-completer.service
       useClass: NATSProvisioningCompleter,
     },
   ],
-  exports: ['FactoryValidator', 'ProvisioningCompleter'],
+  exports: ['FactoryValidator', 'ProvisioningCompleter', NATSRRClient],
 })
 export class NATSModule {}

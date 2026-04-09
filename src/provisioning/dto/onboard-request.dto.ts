@@ -1,14 +1,22 @@
-import { IsString, IsNotEmpty, IsInt, Min } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  Min,
+  ValidateNested,
+  IsOptional,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
-export class OnboardRequestDto {
+export class FactoryCredentialsDto {
   @ApiProperty({
     description: 'Identificativo univoco del gateway (Opaque identifier)',
     example: 'GW-NOTIP-2026-001',
   })
   @IsString()
   @IsNotEmpty()
-  factory_id: string;
+  factoryId: string;
 
   @ApiProperty({
     description:
@@ -18,7 +26,17 @@ export class OnboardRequestDto {
   })
   @IsString()
   @IsNotEmpty()
-  factory_key: string;
+  factoryKey: string;
+}
+
+export class OnboardRequestDto {
+  @ApiProperty({
+    description: 'Credenziali di fabbrica per autenticare il gateway',
+    type: FactoryCredentialsDto,
+  })
+  @ValidateNested()
+  @Type(() => FactoryCredentialsDto)
+  credentials: FactoryCredentialsDto;
 
   @ApiProperty({
     description: 'Certificate Signing Request in formato PEM',
@@ -30,10 +48,20 @@ export class OnboardRequestDto {
   csr: string;
 
   @ApiProperty({
+    type: 'integer',
     description: 'Frequenza di invio telemetria del gateway in millisecondi',
     example: 5000,
+    minimum: 1,
   })
   @IsInt()
   @Min(1)
-  send_frequency_ms: number;
+  sendFrequencyMs: number;
+
+  @ApiPropertyOptional({
+    description: 'Versione firmware del gateway',
+    example: '1.0.0',
+  })
+  @IsOptional()
+  @IsString()
+  firmwareVersion?: string;
 }

@@ -6,5 +6,6 @@ export interface ProvisioningCompleter {
     identity: GatewayIdentity,
     aeskey: AESKey,
     sendFrequencyMs: number,
+    firmwareVersion: string,
   ): Promise<void>;
 }

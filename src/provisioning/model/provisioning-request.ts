@@ -6,5 +6,6 @@ export class ProvisioningRequest {
     public readonly credentials: FactoryCredentials,
     public readonly csr: GatewayCSR,
     public readonly sendFrequencyMs: number,
+    public readonly firmwareVersion: string = '',
   ) {}
 }

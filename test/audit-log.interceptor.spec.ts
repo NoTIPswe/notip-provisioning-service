@@ -5,6 +5,7 @@ import { ProvisioningResult } from '../src/provisioning/model/provisioning-resul
 import { SignedCertificate } from '../src/ca/model/signed-certificate';
 import { AESKey } from '../src/provisioning/model/aes-key';
 import { GatewayIdentity } from '../src/provisioning/model/gateway-identity';
+import { NATSRRClient } from '../src/nats/nats-rr.client';
 import {
   GatewayAlreadyProvisionedError,
   InvalidFactoryCredentialsError,
@@ -59,7 +60,11 @@ describe('AuditLogInterceptor', () => {
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
     const request: RequestLike = {
-      body: { factory_id: 'factory-1' },
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
       headers: { 'x-forwarded-for': '10.0.0.1, 10.0.0.2' },
       provisioningResult: new ProvisioningResult(
         new SignedCertificate('CERT'),
@@ -83,12 +88,110 @@ describe('AuditLogInterceptor', () => {
     expect(payload.tenant_id).toBe('tenant-1');
   });
 
+  it('publishes successful provisioning audit entries to NATS when tenant is available', async () => {
+    const publish = jest.fn().mockResolvedValue(undefined);
+    const natsClient = {
+      publish,
+    } as unknown as NATSRRClient;
+    const interceptor = new AuditLogInterceptor(natsClient);
+
+    const request: RequestLike = {
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
+      headers: {},
+      provisioningResult: new ProvisioningResult(
+        new SignedCertificate('CERT'),
+        new AESKey(Buffer.alloc(32, 1)),
+        new GatewayIdentity('gw-1', 'tenant-1'),
+        5000,
+      ),
+    };
+
+    const context = createContext(request);
+    const handler: CallHandler = { handle: () => of('ok') };
+
+    await firstValueFrom(interceptor.intercept(context, handler));
+
+    expect(publish).toHaveBeenCalledWith(
+      'log.audit.tenant-1',
+      expect.objectContaining({
+        action: 'PROVISIONING_ONBOARD_SUCCESS',
+        userId: '00000000-0000-0000-0000-000000000000',
+      }),
+    );
+  });
+
+  it('falls back to top-level factory_id when nested credentials are missing', async () => {
+    const interceptor = new AuditLogInterceptor();
+    const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
+
+    const request: RequestLike = {
+      body: {
+        factory_id: 'factory-top-level',
+      },
+      headers: {},
+      provisioningResult: new ProvisioningResult(
+        new SignedCertificate('CERT'),
+        new AESKey(Buffer.alloc(32, 1)),
+        new GatewayIdentity('gw-1', 'tenant-1'),
+        5000,
+      ),
+    };
+
+    const context = createContext(request);
+    const handler: CallHandler = { handle: () => of('ok') };
+
+    await firstValueFrom(interceptor.intercept(context, handler));
+
+    const payload = latestPayload(logSpy);
+    expect(payload.factory_id).toBe('factory-top-level');
+  });
+
+  it('logs a warning when audit publish fails', async () => {
+    const publish = jest.fn().mockRejectedValue(new Error('publish failed'));
+    const warnSpy = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    const natsClient = {
+      publish,
+    } as unknown as NATSRRClient;
+    const interceptor = new AuditLogInterceptor(natsClient);
+
+    const request: RequestLike = {
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
+      headers: {},
+      provisioningResult: new ProvisioningResult(
+        new SignedCertificate('CERT'),
+        new AESKey(Buffer.alloc(32, 1)),
+        new GatewayIdentity('gw-1', 'tenant-1'),
+        5000,
+      ),
+    };
+
+    const context = createContext(request);
+    const handler: CallHandler = { handle: () => of('ok') };
+
+    await firstValueFrom(interceptor.intercept(context, handler));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('logs mapped failure outcome and rethrows', async () => {
     const interceptor = new AuditLogInterceptor();
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
     const request: RequestLike = {
-      body: { factory_id: 'factory-1' },
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
       headers: {},
       ip: '127.0.0.1',
     };
@@ -118,7 +221,11 @@ describe('AuditLogInterceptor', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
       const request: RequestLike = {
-        body: { factory_id: 'factory-1' },
+        body: {
+          credentials: {
+            factoryId: 'factory-1',
+          },
+        },
         headers: {},
         ip: '127.0.0.1',
       };
@@ -142,7 +249,11 @@ describe('AuditLogInterceptor', () => {
     const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation();
 
     const request: RequestLike = {
-      body: { factory_id: 'factory-1' },
+      body: {
+        credentials: {
+          factoryId: 'factory-1',
+        },
+      },
       headers: {},
       ip: '127.0.0.1',
     };

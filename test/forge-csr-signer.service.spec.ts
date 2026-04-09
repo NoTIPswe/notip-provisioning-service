@@ -1,4 +1,5 @@
 import * as forge from 'node-forge';
+import { Logger } from '@nestjs/common';
 import { ForgeCSRSignerService } from '../src/ca/forge-csr-signer.service';
 import { CAMaterial } from '../src/ca/model/ca-material';
 import { GatewayCSR } from '../src/provisioning/model/gateway-csr';
@@ -10,6 +11,16 @@ type SubjectAltNameExtension = {
 };
 
 describe('ForgeCSRSignerService', () => {
+  beforeEach(() => {
+    jest.spyOn(Logger.prototype, 'log').mockImplementation();
+    jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    jest.spyOn(Logger.prototype, 'error').mockImplementation();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   const buildCA = () => {
     const keys = forge.pki.rsa.generateKeyPair(2048);
     const cert = forge.pki.createCertificate();
@@ -69,6 +80,27 @@ describe('ForgeCSRSignerService', () => {
     );
   });
 
+  it('generates a positive certificate serial number', async () => {
+    const caProvider = { getCA: jest.fn().mockReturnValue(buildCA()) };
+    const config = { CERT_TTL_DAYS: 90 };
+    const service = new ForgeCSRSignerService(
+      caProvider as never,
+      config as never,
+    );
+
+    const result = await service.sign(
+      new GatewayCSR(buildValidCsrPem()),
+      new GatewayIdentity('gw-serial', 'tenant-serial'),
+    );
+
+    const cert = forge.pki.certificateFromPem(result.pemData);
+    const serialHex = cert.serialNumber.padStart(2, '0');
+    const firstByte = parseInt(serialHex.slice(0, 2), 16);
+
+    expect(firstByte & 0x80).toBe(0);
+    expect(/^0+$/.test(serialHex)).toBe(false);
+  });
+
   it('throws MalformedCSRError when CSR cannot be parsed', async () => {
     const caProvider = { getCA: jest.fn().mockReturnValue(buildCA()) };
     const config = { CERT_TTL_DAYS: 90 };
@@ -114,5 +146,56 @@ describe('ForgeCSRSignerService', () => {
 
     expect(parseSpy).toHaveBeenCalledTimes(1);
     expect(verifyMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws MalformedCSRError when CSR public key is missing', async () => {
+    const caProvider = { getCA: jest.fn().mockReturnValue(buildCA()) };
+    const config = { CERT_TTL_DAYS: 90 };
+    const service = new ForgeCSRSignerService(
+      caProvider as never,
+      config as never,
+    );
+
+    const csrMock = {
+      verify: jest.fn().mockReturnValue(true),
+      publicKey: undefined,
+    } as unknown as forge.pki.CertificateSigningRequest;
+
+    const parseSpy = jest
+      .spyOn(forge.pki, 'certificationRequestFromPem')
+      .mockReturnValue(csrMock);
+
+    await expect(
+      service.sign(
+        new GatewayCSR(
+          '-----BEGIN CERTIFICATE REQUEST-----\nmissing-public-key',
+        ),
+        new GatewayIdentity('gw-1', 'tenant-1'),
+      ),
+    ).rejects.toBeInstanceOf(MalformedCSRError);
+
+    expect(parseSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('normalizes an all-zero serial number to a positive value', async () => {
+    const caProvider = { getCA: jest.fn().mockReturnValue(buildCA()) };
+    const config = { CERT_TTL_DAYS: 90 };
+    const service = new ForgeCSRSignerService(
+      caProvider as never,
+      config as never,
+    );
+
+    const randomSpy = jest
+      .spyOn(forge.random, 'getBytesSync')
+      .mockReturnValue('\u0000'.repeat(16));
+
+    const result = await service.sign(
+      new GatewayCSR(buildValidCsrPem()),
+      new GatewayIdentity('gw-zero', 'tenant-zero'),
+    );
+
+    const cert = forge.pki.certificateFromPem(result.pemData);
+    expect(cert.serialNumber.endsWith('1')).toBe(true);
+    expect(randomSpy).toHaveBeenCalledTimes(1);
   });
 });
