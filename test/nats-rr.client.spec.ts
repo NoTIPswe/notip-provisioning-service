@@ -54,7 +54,7 @@ describe('NATSRRClient', () => {
   it('uses token credentials when connecting', async () => {
     const mockConnection = buildMockConnection();
     const connectMock = connect as jest.MockedFunction<typeof connect>;
-    connectMock.mockResolvedValue(mockConnection as NatsConnection);
+    connectMock.mockResolvedValue(mockConnection as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
     const client = new NATSRRClient(baseConfig as never, metrics as never);
@@ -73,7 +73,7 @@ describe('NATSRRClient', () => {
   it('uses user/pass credentials when connecting', async () => {
     const mockConnection = buildMockConnection();
     const connectMock = connect as jest.MockedFunction<typeof connect>;
-    connectMock.mockResolvedValue(mockConnection as NatsConnection);
+    connectMock.mockResolvedValue(mockConnection as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
     const client = new NATSRRClient(
@@ -94,7 +94,7 @@ describe('NATSRRClient', () => {
   it('uses mTLS options when certificates are configured', async () => {
     const mockConnection = buildMockConnection();
     const connectMock = connect as jest.MockedFunction<typeof connect>;
-    connectMock.mockResolvedValue(mockConnection as NatsConnection);
+    connectMock.mockResolvedValue(mockConnection as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
     const client = new NATSRRClient(
@@ -128,7 +128,7 @@ describe('NATSRRClient', () => {
     });
 
     const connectMock = connect as jest.MockedFunction<typeof connect>;
-    connectMock.mockResolvedValue(mockConnection as NatsConnection);
+    connectMock.mockResolvedValue(mockConnection as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
     const client = new NATSRRClient(baseConfig as never, metrics as never);
@@ -144,7 +144,7 @@ describe('NATSRRClient', () => {
     const mockConnection = buildMockConnection();
 
     const connectMock = connect as jest.MockedFunction<typeof connect>;
-    connectMock.mockResolvedValue(mockConnection as NatsConnection);
+    connectMock.mockResolvedValue(mockConnection as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
     const client = new NATSRRClient(baseConfig as never, metrics as never);
@@ -160,7 +160,7 @@ describe('NATSRRClient', () => {
   it('closes the active connection on module destroy', async () => {
     const mockConnection = buildMockConnection();
     const connectMock = connect as jest.MockedFunction<typeof connect>;
-    connectMock.mockResolvedValue(mockConnection as NatsConnection);
+    connectMock.mockResolvedValue(mockConnection as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
     const client = new NATSRRClient(baseConfig as never, metrics as never);
@@ -178,7 +178,7 @@ describe('NATSRRClient', () => {
       metrics as never,
     );
 
-    jest.spyOn(client as never, 'initConnection').mockResolvedValue(undefined);
+    jest.spyOn(client as any, 'initConnection').mockResolvedValue(undefined);
 
     await expect(
       client.request('subject.no-conn', { x: 1 }),
@@ -192,7 +192,7 @@ describe('NATSRRClient', () => {
       metrics as never,
     );
 
-    jest.spyOn(client as never, 'initConnection').mockResolvedValue(undefined);
+    jest.spyOn(client as any, 'initConnection').mockResolvedValue(undefined);
 
     await expect(
       client.publish('subject.no-conn', { x: 1 }),
@@ -206,7 +206,7 @@ describe('NATSRRClient', () => {
     );
 
     const connectMock = connect as jest.MockedFunction<typeof connect>;
-    connectMock.mockResolvedValue(mockConnection as NatsConnection);
+    connectMock.mockResolvedValue(mockConnection as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
     const client = new NATSRRClient(baseConfig as never, metrics as never);
@@ -240,8 +240,8 @@ describe('NATSRRClient', () => {
 
     const connectMock = connect as jest.MockedFunction<typeof connect>;
     connectMock
-      .mockResolvedValueOnce(firstConnection as NatsConnection)
-      .mockResolvedValueOnce(secondConnection as NatsConnection);
+      .mockResolvedValueOnce(firstConnection as unknown as NatsConnection)
+      .mockResolvedValueOnce(secondConnection as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
     const client = new NATSRRClient(baseConfig as never, metrics as never);
@@ -272,7 +272,7 @@ describe('NATSRRClient', () => {
       request: jest.fn(),
       publish: jest.fn(),
       close: jest.fn(),
-    } as never);
+    } as unknown as NatsConnection);
 
     const metrics: MetricsLike = { natsRetries: { inc: jest.fn() } };
 
@@ -300,7 +300,7 @@ describe('NATSRRClient', () => {
       metrics as never,
     );
 
-    jest.spyOn(client as never, 'initConnection').mockResolvedValue(undefined);
+    jest.spyOn(client as any, 'initConnection').mockResolvedValue(undefined);
 
     await expect(
       client.request('subject.no-conn', { x: 1 }),
@@ -314,7 +314,7 @@ describe('NATSRRClient', () => {
       metrics as never,
     );
 
-    jest.spyOn(client as never, 'initConnection').mockResolvedValue(undefined);
+    jest.spyOn(client as any, 'initConnection').mockResolvedValue(undefined);
 
     await expect(
       client.publish('subject.no-conn', { x: 1 }),

@@ -18,12 +18,12 @@ describe('CAFileStoreService initialize failures', () => {
   it('wraps write failures in CAUninitializedError', async () => {
     const service = new CAFileStoreService({
       CA_CERTS_PATH: '/tmp/notip-ca-failure',
-    } as never);
+    } as any);
 
-    jest.spyOn(service as never, 'generateCA').mockReturnValue(
+    jest.spyOn(service as any, 'generateCA').mockReturnValue(
       new CAMaterial('CA_PRIVATE_PEM', 'CA_CERT_PEM'),
     );
-    jest.spyOn(service as never, 'generateNATSServerCert').mockReturnValue({
+    jest.spyOn(service as any, 'generateNATSServerCert').mockReturnValue({
       keyPem: 'NATS_PRIVATE_PEM',
       certPem: 'NATS_CERT_PEM',
     });

@@ -175,7 +175,6 @@ describe('ProvisioningService', () => {
   });
 
   it('maps management API failures to service_unavailable reason', async () => {
-    const identity = new GatewayIdentity('gw-1', 'tenant-1');
     const factoryValidator = {
       validate: jest
         .fn()

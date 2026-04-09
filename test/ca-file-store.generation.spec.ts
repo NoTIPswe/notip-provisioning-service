@@ -5,12 +5,6 @@ jest.mock('node-forge', () => {
     },
   };
 
-  const natsCertificate = {
-    subject: {
-      attributes: [{ name: 'commonName', value: 'NoTIP Internal CA' }],
-    },
-  };
-
   const certificateFactory = jest
     .fn()
     .mockImplementationOnce(() => ({

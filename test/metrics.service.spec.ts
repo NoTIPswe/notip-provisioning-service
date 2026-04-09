@@ -1,4 +1,4 @@
-import { collectDefaultMetrics, Counter, Gauge, Histogram, register } from 'prom-client';
+import { collectDefaultMetrics, Counter, Gauge, Histogram } from 'prom-client';
 import { MetricsService } from '../src/metrics/metrics.service';
 
 jest.mock('prom-client', () => ({
