@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/NoTIPswe/notip-provisioning-service/compare/v1.2.0...v2.0.0) (2026-04-11)
+
+
+### Bug Fixes
+
+* updated the README file ([99f195e](https://github.com/NoTIPswe/notip-provisioning-service/commit/99f195ebc5b28ad6e6063d3f23f7031261efe084))
+
+
+### BREAKING CHANGES
+
+* new version
+
 # [1.2.0](https://github.com/NoTIPswe/notip-provisioning-service/compare/v1.1.1...v1.2.0) (2026-04-09)
 
 
