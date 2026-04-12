@@ -1,4 +1,6 @@
 # notip-provisioning-service
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=NoTIPswe_notip-provisioning-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=NoTIPswe_notip-provisioning-service)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=NoTIPswe_notip-provisioning-service&metric=coverage)](https://sonarcloud.io/summary/new_code?id=NoTIPswe_notip-provisioning-service)
 
 NestJS microservice responsible for onboarding IoT gateways into the NoTIP platform. It validates factory credentials over NATS, signs a CSR with an internal CA, generates an AES-256 key, and notifies the Management API to mark the gateway as provisioned.
 
