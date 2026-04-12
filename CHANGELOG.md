@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/NoTIPswe/notip-provisioning-service/compare/v2.0.0...v2.0.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* add quality badges to README ([4ded27b](https://github.com/NoTIPswe/notip-provisioning-service/commit/4ded27b8e6c73f74f848c21d034d3a7e1e6b9905))
+
 # [2.0.0](https://github.com/NoTIPswe/notip-provisioning-service/compare/v1.2.0...v2.0.0) (2026-04-11)
 
 
